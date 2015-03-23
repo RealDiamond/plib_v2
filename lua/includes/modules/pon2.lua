@@ -387,3 +387,18 @@ pon2.decode = function(val)
 
 	return obj
 end
+
+-- compatability layor
+do
+	require 'pon'
+	local pon = pon
+	local pcall = pcall
+	pon.decode_l = function(val)
+		local succ, res = pcall(pon2.decode, val)
+		if succ then return res end
+		local succ, res = pcall(pon.decode, val)
+		if succ then return res end
+		return nil
+	end
+	
+end
