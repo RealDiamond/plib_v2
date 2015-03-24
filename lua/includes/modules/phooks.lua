@@ -1,11 +1,4 @@
-
-if SERVER then
-	AddCSLuaFile()
-end
-
 local oldHooks 		= hook.GetTable()
-
-hook 				= {}
 
 local hook 			= hook
 local table_remove 	= table.remove
@@ -44,6 +37,7 @@ hook.Call = function(name, gm, ...)
 end
 
 local hook_Call = hook.Call
+local GAMEMODE 	= GAMEMODE
 hook.Run = function(name, ...)
 	hook_Call(name, GAMEMODE, ...)
 end
@@ -66,7 +60,6 @@ end
 
 local hook_Remove = hook.Remove
 hook.Add = function(name, id, func) 
-
 	if type(id) == 'function' then
 		func = id
 		id = debug_info(func).short_src
