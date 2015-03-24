@@ -1,5 +1,5 @@
-export pmysql
-pmysql or= {}
+export pmysqloo
+pmysqloo or= {}
 
 require 'mysqloo'
 
@@ -39,9 +39,9 @@ class Db
 			
 			-- events on connection
 			@db.onConnected = () => 
-				MsgC(Color(0,255,0), 'pMySQL connected successfully.\n')
+				MsgC(Color(0,255,0), 'pmysqloo connected successfully.\n')
 			@db.onConnectionFailed = (err) =>
-				MsgC(Color(255,0,0), 'pMySQL connection failed\n')
+				MsgC(Color(255,0,0), 'pmysqloo connection failed\n')
 				error(err)
 			
 			dprint('started new db connection with hash: '..@hash)
@@ -60,11 +60,11 @@ class Db
 		@db = db.db
 
 	connect: =>
-		MsgC(Color(0,255,0), 'pMySQL connecting to database\n')
+		MsgC(Color(0,255,0), 'pmysqloo connecting to database\n')
 		start = SysTime!
 		@db\connect!
 		@db\wait!
-		MsgC(Color(155,155,155), 'pMySQL connect operation complete. took: '..(SysTime! - start)..' seconds\n')
+		MsgC(Color(155,155,155), 'pmysqloo connect operation complete. took: '..(SysTime! - start)..' seconds\n')
 
 	query: (sqlstr, callback) =>
 		query = @db\query(sqlstr)
@@ -126,7 +126,7 @@ class Db
 					print('table info: '..table)
 					PrintTable(data)
 	
-pmysql.newdb = (...) ->
+pmysqloo.newdb = (...) ->
 	Db(...)
 	
-pmysql.Db = Db
+pmysqloo.Db = Db
