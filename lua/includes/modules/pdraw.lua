@@ -3,7 +3,8 @@ local surface 	= surface
 local render 	= render
 
 local surface_SetDrawColor = surface.SetDrawColor
-local surface_DrawRect = surface.DrawRect 
+local surface_DrawRect = surface.DrawRect
+local surface_DrawRectBold = surface.DrawBoldOutlinedRect
 
 function draw.Box(x, y, w, h, col)
 	surface_SetDrawColor(col)
@@ -12,14 +13,15 @@ end
 
 function draw.Outline(x, y, w, h, col, thickness)
 	surface_SetDrawColor(col)
-	surface.DrawBoldOutlinedRect(x, y, w, h, thickness)
+	surface_DrawRectBold(x, y, w, h, thickness)
 end
 
 function draw.OutlinedBox(x, y, w, h, col, bordercol, thickness)
 	surface_SetDrawColor(col)
 	surface_DrawRect(x + 1, y + 1, w - 2, h - 2)
 
-	draw.Outline(x, y, w, h, bordercol, thickness)
+	surface_SetDrawColor(bordercol)
+	surface_DrawRectBold(x, y, w, h, thickness)
 end
 
 local blur = Material('pp/blurscreen')
@@ -36,15 +38,13 @@ function draw.Blur(panel, amount) -- Thanks nutscript
 	end
 end
 
-
-function surface.DrawBoldOutlinedRect(x, y, w, h, _w)
-	if not _w then _w = 1 end
-	surface_DrawRect(			x, 		y, 	w, 		 _w)
-	surface_DrawRect(			x, y+_w, _w, h-_w*2)
-	surface_DrawRect(x+w-_w, y+_w, _w, h-_w*2)
-	surface_DrawRect(     x, h-_w,  w,     _w)
+function surface.DrawBoldOutlinedRect(x, y, w, h, t)
+	if not t then t = 1 end
+	surface_DrawRect(x, y, w, t)
+	surface_DrawRect(x, y + (h - t), w, t)
+	surface_DrawRect(x, y, t, h)
+	surface_DrawRect(x + (w - t), y, t, h)
 end
-
 
 do
 	local q = {{},{},{},{}};
