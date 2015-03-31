@@ -19,19 +19,22 @@ if (SERVER) then
 	util.AddNetworkString('nw.ping')
 
 	function GetFilter(ent, var, value)
-		return (nw.VarFuncs[var] ~= nil and nw.VarFuncs[var].Filter ~= nil) and nw.VarFuncs[var].Filter(ent, var, value) or nil
+		return (nw.VarFuncs[var] ~= nil and nw.VarFuncs[var].Filter ~= nil) and nw.VarFuncs[var].Filter(ent, var, value) or player.GetAll()
 	end
 
-	local function SendVar(index, var, value)
+	local function SendVar(ent, var, value, filter)
 		if (nw.VarFuncs[var] ~= nil) and (nw.VarFuncs[var].Send ~= nil) then
-			nw.VarFuncs[var].Send(self, index, value)
+			nw.VarFuncs[var].Send(ent, value, filter)
 		else
-			MsgC(Color(255,0,0), 'UNREGISTERED VAR: ' .. var)
+			local index = ent:EntIndex()
+			
 			net.Start('nw.var')
 				net.WriteUInt(index, 16)
 				net.WriteString(var)
 				net.WriteType(value)
 			net.Broadcast()
+
+			MsgC(Color(255,0,0), 'UNREGISTERED VAR: ' .. var)
 		end
 	end
 
@@ -44,7 +47,7 @@ if (SERVER) then
 
 		nw.Stored[index][var] = value
 
-		SendVar(index, var, value)
+		SendVar(self, var, value)
 	end
 
 	net.Receive('nw.ping', function(len, pl)
@@ -58,7 +61,7 @@ if (SERVER) then
 		for index, vars in pairs(nw.Stored) do
 			local ent = Entity(index)
 			for var, value in pairs(vars) do
-				SendVar(index, var, value)
+				SendVar(Entity(index), var, value, pl)
 			end
 		end
 	end)
@@ -136,19 +139,21 @@ function nw.Register(var, funcs) -- always call this shared
 	local WriteFunc = ((funcs and funcs.Write) and funcs.Write or net.WriteType)
 
 	nw.VarFuncs[var] = {
-		Send 	= function(ent, index, value)
+		Send 	= function(ent, value, filter)
+			local index = ent:EntIndex()
+
 			if (value == nil) then
 				net.Start('nw.delete')
 					net.WriteUInt(index, 16)
 					net.WriteString(var)
-				net.Send(GetFilter(ent, var, value) or player.GetAll())
+				net.Send(filter or GetFilter(ent, var, value))
 				return
 			end
 
 			net.Start('nw_' ..  var)
 				net.WriteUInt(index, 16)
 				WriteFunc(value)
-			net.Send(GetFilter(ent, var, value) or player.GetAll())
+			net.Send(filter or GetFilter(ent, var, value))
 		end,
 		Filter 	= (funcs and funcs.Filter or nil)
 	}
