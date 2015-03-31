@@ -172,55 +172,23 @@ end
 --
 -- DRAW TEXT ROTATED
 --
-do
-  local surface_SetFont, surface_SetTextColor, surface_SetTextPos, surface_GetTextSize, surface_DrawText
-  do
-    local _obj_0 = surface
-    surface_SetFont, surface_SetTextColor, surface_SetTextPos, surface_GetTextSize, surface_DrawText = _obj_0.SetFont, _obj_0.SetTextColor, _obj_0.SetTextPos, _obj_0.GetTextSize, _obj_0.DrawText
-  end
-  local TEXFILTER_ANISOTROPIC
-  do
-    local _obj_0 = TEXFILTER
-    TEXFILTER_ANISOTROPIC = _obj_0.ANISOTROPIC
-  end
-  local math_rad, math_sin, math_cos
-  do
-    local _obj_0 = math
-    math_rad, math_sin, math_cos = _obj_0.rad, _obj_0.sin, _obj_0.cos
-  end
-  local cam_PushModelMatrix, cam_PopModelMatrix
-  do
-    local _obj_0 = cam
-    cam_PushModelMatrix, cam_PopModelMatrix = _obj_0.PushModelMatrix, _obj_0.PopModelMatrix
-  end
-  local render_PopFilterMag, render_PopFilterMin, render_PushFilterMag, render_PushFilterMin
-  do
-    local _obj_0 = render
-    render_PopFilterMag, render_PopFilterMin, render_PushFilterMag, render_PushFilterMin = _obj_0.PopFilterMag, _obj_0.PopFilterMin, _obj_0.PushFilterMag, _obj_0.PushFilterMin
-  end
-  local pi_2 = math.pi / 2
-  local matrix = Matrix()
-  local angle = Angle(0, 0, 0)
-  local vector = Vector(0, 0, 0)
-  local drawfunc
-  drawfunc = function(text, x, y, color, font, ang)
-    surface_SetFont(font)
-    surface_SetTextColor(color)
-    surface_SetTextPos(0, 0)
-    local textW, textH = surface_GetTextSize(font)
-    angle.y = ang
-    vector.x, vector.y = x, y
-    matrix:SetAngles(angle)
-    matrix:SetTranslation(vector)
-    cam_PushModelMatrix(matrix)
-    surface_DrawText(text)
-    return cam_PopModelMatrix()
-  end
-  draw.TextRotated = function(...)
-    render_PushFilterMag(TEXFILTER_ANISOTROPIC)
-    render_PushFilterMin(TEXFILTER_ANISOTROPIC)
-    pcall(drawfunc, ...)
-    render_PopFilterMag()
-    return render_PopFilterMin()
-  end
+local Vector = Vector
+local Matrix = Matrix
+function draw.TextRotated(text, x, y, color, font, ang)
+	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+	surface.SetFont(font)
+	surface.SetTextColor(color)
+	local textWidth, textHeight = surface.GetTextSize( text )
+	local rad = -math.rad( ang )
+	local halvedPi = math.pi / 2
+	local m = Matrix()
+	m:SetAngles(Angle(0, ang, 0))
+	m:SetTranslation(Vector(x, y, 0))
+	cam.PushModelMatrix(m)
+		surface.SetTextPos(0, 0)
+		surface.DrawText(text)
+	cam.PopModelMatrix()
+	render.PopFilterMag()
+	render.PopFilterMin()
 end

@@ -14,6 +14,11 @@ local MsgC , print = _G.MsgC , _G.print
 -- auto benchmark
 function dprint(...)
 	local info = debug.getinfo(2)
+	if not info then 
+		print(...)
+		return
+	end
+	
 	local fname = info.short_src;
 	if fileAbbrev[fname] then
 		fname = fileAbbrev[fname];
