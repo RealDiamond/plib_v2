@@ -4,6 +4,15 @@ local render 	= render
 
 local surface_SetDrawColor = surface.SetDrawColor
 local surface_DrawRect = surface.DrawRect
+
+function surface.DrawBoldOutlinedRect(x, y, w, h, t)
+	if not t then t = 1 end
+	surface_DrawRect(x, y, w, t)
+	surface_DrawRect(x, y + (h - t), w, t)
+	surface_DrawRect(x, y, t, h)
+	surface_DrawRect(x + (w - t), y, t, h)
+end
+
 local surface_DrawRectBold = surface.DrawBoldOutlinedRect
 
 function draw.Box(x, y, w, h, col)
@@ -38,13 +47,6 @@ function draw.Blur(panel, amount) -- Thanks nutscript
 	end
 end
 
-function surface.DrawBoldOutlinedRect(x, y, w, h, t)
-	if not t then t = 1 end
-	surface_DrawRect(x, y, w, t)
-	surface_DrawRect(x, y + (h - t), w, t)
-	surface_DrawRect(x, y, t, h)
-	surface_DrawRect(x + (w - t), y, t, h)
-end
 
 do
 	local q = {{},{},{},{}};

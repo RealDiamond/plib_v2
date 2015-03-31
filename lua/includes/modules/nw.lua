@@ -22,6 +22,19 @@ if (SERVER) then
 		return (nw.VarFuncs[var] ~= nil and nw.VarFuncs[var].Filter ~= nil) and nw.VarFuncs[var].Filter(ent, var, value) or nil
 	end
 
+	local function SendVar(index, var, value)
+		if (nw.VarFuncs[var] ~= nil) and (nw.VarFuncs[var].Send ~= nil) then
+			nw.VarFuncs[var].Send(self, index, value)
+		else
+			MsgC(Color(255,0,0), 'UNREGISTERED VAR: ' .. var)
+			net.Start('nw.var')
+				net.WriteUInt(index, 16)
+				net.WriteString(var)
+				net.WriteType(value)
+			net.Broadcast()
+		end
+	end
+
 	function ENTITY:SetNetVar(var, value)
 		local index = self:EntIndex()
 		
@@ -31,36 +44,21 @@ if (SERVER) then
 
 		nw.Stored[index][var] = value
 
-		if (nw.VarFuncs[var] ~= nil) and (nw.VarFuncs[var].Send ~= nil) then
-			nw.VarFuncs[var].Send(self, index, value)
-			return
-		end
-
-		MsgC(Color(255,0,0), 'UNREGISTERED VAR: ' .. var)
-
-		net.Start('nw.var')
-			net.WriteUInt(index, 16)
-			net.WriteString(var)
-			net.WriteType(value)
-		net.Send(GetFilter(self, var, value) or player.GetAll())
+		SendVar(index, var, value)
 	end
 
 	net.Receive('nw.ping', function(len, pl)
-		hook.Call('PlayerEntityCreated', GAMEMODE, pl)
+		if (pl.EntityCreated ~= true) then
+			hook.Call('PlayerEntityCreated', GAMEMODE, pl)
+			pl.EntityCreated = true
+		end
 	end)
 
 	hook.Add('PlayerEntityCreated', 'nw.PlayerEntityCreated', function(pl)
 		for index, vars in pairs(nw.Stored) do
 			local ent = Entity(index)
 			for var, value in pairs(vars) do
-				local filter = GetFilter(ent, var, value)
-				if (filter == pl) or (filter == nil) then
-					net.Start('nw.var')
-						net.WriteUInt(index, 16)
-						net.WriteString(var)
-						net.WriteType(value)
-					net.Send(pl)
-				end
+				SendVar(index, var, value)
 			end
 		end
 	end)
