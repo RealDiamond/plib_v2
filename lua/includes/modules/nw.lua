@@ -70,7 +70,7 @@ if (SERVER) then
 		local index = ent:EntIndex()
 		if (nw.Stored[index] ~= nil) then
 			net.Start('nw.clear')
-				net.WriteUInt(index, 16)
+				net.WriteUInt(index, 12)
 			net.Broadcast()
 			nw.Stored[index] = nil
 		end
@@ -82,7 +82,7 @@ elseif (CLIENT) then
 	end
 
 	net.Receive('nw.var', function()
-		local index = net.ReadUInt(16)
+		local index = net.ReadUInt(12)
 		local var 	= net.ReadString()
 		local value = ReadType()
 
@@ -94,11 +94,11 @@ elseif (CLIENT) then
 	end)
 
 	net.Receive('nw.clear', function()
-		nw.Stored[net.ReadUInt(16)] = nil
+		nw.Stored[net.ReadUInt(12)] = nil
 	end)
 
 	net.Receive('nw.delete', function()
-		local index = net.ReadUInt(16)
+		local index = net.ReadUInt(12)
 		if (nw.Stored[index] ~= nil) then
 			nw.Stored[index][net.ReadString()] = nil
 		end
@@ -125,7 +125,7 @@ function nw.Register(var, funcs) -- always call this shared
 		local ReadFunc = ((funcs and funcs.Read) and funcs.Read or ReadType)
 
 		net.Receive('nw_' ..  var, function()
-			local index = net.ReadUInt(16)
+			local index = net.ReadUInt(12)
 			local value = ReadFunc()
 
 			if (nw.Stored[index] == nil) then
@@ -144,14 +144,14 @@ function nw.Register(var, funcs) -- always call this shared
 
 			if (value == nil) then
 				net.Start('nw.delete')
-					net.WriteUInt(index, 16)
+					net.WriteUInt(index, 12)
 					net.WriteString(var)
 				net.Send(filter or GetFilter(ent, var, value))
 				return
 			end
 
 			net.Start('nw_' ..  var)
-				net.WriteUInt(index, 16)
+				net.WriteUInt(index, 12)
 				WriteFunc(value)
 			net.Send(filter or GetFilter(ent, var, value))
 		end,
