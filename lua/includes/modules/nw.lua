@@ -1,6 +1,7 @@
 nw 				= nw 			or {}
 nw.Stored 		= nw.Stored 	or {}
 nw.VarFuncs		= nw.VarFuncs 	or {}
+nw.Callbacks 	= nw.Callbacks 	or {}
 
 local nw 		= nw
 local net 		= net
@@ -53,18 +54,35 @@ if (SERVER) then
 	net.Receive('nw.ping', function(len, pl)
 		if (pl.EntityCreated ~= true) then
 			hook.Call('PlayerEntityCreated', GAMEMODE, pl)
+
 			pl.EntityCreated = true
+
+			for index, vars in pairs(nw.Stored) do
+				local ent = Entity(index)
+				for var, value in pairs(vars) do
+					SendVar(Entity(index), var, value, pl)
+				end
+			end
+
+			if (nw.Callbacks[pl] ~= nil) then
+				for k, v in ipairs(nw.Callbacks[pl]) do
+					v(pl)
+				end
+			end
+			nw.Callbacks[pl] = nil
 		end
 	end)
 
-	hook.Add('PlayerEntityCreated', 'nw.PlayerEntityCreated', function(pl)
-		for index, vars in pairs(nw.Stored) do
-			local ent = Entity(index)
-			for var, value in pairs(vars) do
-				SendVar(Entity(index), var, value, pl)
-			end
+	function nw.WaitForPlayer(pl, callback)
+		if (pl.EntityCreated == true) then
+			callback(pl)
+			return
 		end
-	end)
+		if (nw.Callbacks[pl] == nil) then
+			nw.Callbacks[pl] = {}
+		end
+		nw.Callbacks[pl][#nw.Callbacks[pl] + 1] = callback
+	end
 
 	hook.Add('EntityRemoved', 'nw.EntityRemoved', function(ent)
 		local index = ent:EntIndex()
