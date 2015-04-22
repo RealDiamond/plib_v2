@@ -14,6 +14,7 @@ local table_concat = table.concat
 local Entity = Entity
 local Vector = Vector
 local Angle = Angle
+local EntIndex = FindMetaTable('Entity').EntIndex
 
 
 
@@ -294,7 +295,7 @@ decoders['string'] = function()
 end
 
 encoders['Entity'] = function(val)
-	local val = val:EntIndex()
+	local val = EntIndex(val)
 	while(val >= 47)do
 		output[output_len] = num_to_char[47+val%47]
 		output_len = output_len + 1
@@ -385,7 +386,7 @@ pon2.decode = function(val)
 		cache[i] = nil
 	end
 
-	return obj
+	return obj, index
 end
 
 -- compatability layor
@@ -400,5 +401,4 @@ do
 		if succ then return res end
 		return nil
 	end
-	
 end

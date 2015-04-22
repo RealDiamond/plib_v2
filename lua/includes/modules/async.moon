@@ -1,6 +1,10 @@
 export async
 async or= {}
 
+--
+-- TODO: fix these before using
+--
+
 p = p
 
 async.parallel = (tasks, onFinish = p.fn.noop) ->
