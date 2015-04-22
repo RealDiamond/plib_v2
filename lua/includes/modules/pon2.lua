@@ -394,7 +394,7 @@ do
 	require 'pon'
 	local pon = pon
 	local pcall = pcall
-	pon.decode_l = function(val)
+	pon2.decode_l = function(val)
 		local succ, res = pcall(pon2.decode, val)
 		if succ then return res end
 		local succ, res = pcall(pon.decode, val)
