@@ -1,11 +1,15 @@
 --
--- load pLib and its dependancies's first
+-- Load pLib and its dependancies's first
 --
+
+if (SERVER) then 
+	AddCSLuaFile()
+	AddCSLuaFile('includes/plib.lua')
+	AddCSLuaFile('garry_init.lua')
+end
 include('util.lua')
 include('extensions/file.lua')
-
 include('plib.lua')
-if (SERVER) then AddCSLuaFile('includes/plib.lua') end
 
 local require_blacklist = {}
 local loaded_modules 	= {}
@@ -24,20 +28,19 @@ for _, f in ipairs(files) do
 	require_blacklist[f:sub(1, f:match('.+()%.%w+$') - 1)] = true
 end
 
-local old_require = require
 function require(name)
-	if require_blacklist[name] and not loaded_modules[name] then
-		loaded_modules[name] = true
+	if loaded_modules[name] then return end -- You're an ass hole if you do this
+	loaded_modules[name] = true
+	if require_blacklist[name] then
 		p.print('Overwriting "' .. name .. '" with custom library.')
-		--return include('../includes/libraries/' .. name .. '.lua') -- you still need to manually include them for now.
+		include('libraries/' .. name .. '.lua')
+		return
 	end
-	return old_require(name)
+	return p.require(name)
 end
 
-include('../includes/libraries/hook.lua')
 
 --
 -- Load the garrycode
 --
-local garrycode = file.Read('lua/includes/init.lua', 'GAME')
-RunString(garrycode)
+include('garry_init.lua')
