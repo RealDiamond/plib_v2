@@ -1,8 +1,7 @@
-local oldHooks 		= hook.GetTable()
+hook 				= {}
 
 local hook 			= hook
 local table_remove 	= table.remove
-local table_copy 	= table.Copy
 local debug_info 	= debug.getinfo
 local type 			= type
 local ipairs 		= ipairs
@@ -12,7 +11,7 @@ local hooks 		= {}
 local mappings 		= {}
 
 hook.GetTable = function()
-	return table_copy(mappings)
+	return table.Copy(mappings)
 end
 
 hook.Call = function(name, gm, ...) 
@@ -37,9 +36,8 @@ hook.Call = function(name, gm, ...)
 end
 
 local hook_Call = hook.Call
-local GAMEMODE 	= GAMEMODE
 hook.Run = function(name, ...)
-	hook_Call(name, GAMEMODE, ...)
+	return hook_Call(name, GAMEMODE, ...)
 end
 
 hook.Remove = function(name, id)
@@ -89,11 +87,4 @@ hook.Add = function(name, id, func)
 
 	collection[#collection+1] = func
 	mapping[id] = func
-end
-
-
-for name, collection in pairs(oldHooks) do
-	for id, func in pairs(collection) do
-		hook.Add(name, id, func)
-	end
 end
