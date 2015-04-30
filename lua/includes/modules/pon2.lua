@@ -1,3 +1,30 @@
+--[[ 
+DEVELOPMENTAL VERSION;
+VERSION 2.0.0
+Copyright thelastpenguin™ 
+	You may use this for any purpose as long as:
+	-	You don't remove this copyright notice.
+	-	You don't claim this to be your own.
+	-	You properly credit the author, thelastpenguin™, if you publish your work based on (and/or using) this.
+	
+	If you modify the code for any purpose, the above still applies to the modified code.
+	
+	The author is not held responsible for any damages incured from the use of pon1, you use it at your own risk.
+DATA TYPES SUPPORTED:
+ - tables  - 		k,v - pointers
+ - strings - 		k,v - pointers
+ - numbers -		k,v
+ - booleans- 		k,v
+ - Vectors - 		k,v
+ - Angles  -		k,v
+ - Entities- 		k,v
+ - Players - 		k,v
+ 
+CHANGE LOG
+V 2.0.0 - made pon v2, more compact than pon1 and has better performance for large strings
+	- note that some performance is lost on integer datatypes.
+]]
+
 pon2 = {}
 
 local string_char = string.char
