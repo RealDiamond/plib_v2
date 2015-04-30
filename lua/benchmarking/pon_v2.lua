@@ -1,8 +1,9 @@
-pon2 = {}
+pon2_dev = {}
 
 local string_char = string.char
 local string_byte = string.byte
 local string_sub = string.sub
+local string_find = string.find
 local tonumber = tonumber
 local tostring = tostring
 local string_format = string.format
@@ -10,6 +11,7 @@ local string_len = string.len
 local type = type
 local pairs = pairs
 local table_concat = table.concat
+local next = next
 
 local Entity = Entity
 local Vector = Vector
@@ -92,43 +94,67 @@ local index = 1
 local str = nil
 local strlen = 0
 
-encoders['table'] = function(val)
+encoders['table'] = function(val, output_len, output)
 	cache[val] = cache_size
 	cache_size = cache_size + 1
 
-	local arrayKey = 1
-	local tk, tv
-	for k,v in pairs(val)do
+	
+	for k,v in ipairs(val) do
+		local tk, tv
 		if cache[v] then
 			tv = 'ptr'
 		else
 			tv = type(v)
 		end
 
-		if k == arrayKey then
-			output[output_len] = type_pair_to_id_incr[tv]
-			output_len = output_len + 1
+		output[output_len] = type_pair_to_id_incr[tv]
+		--output_len = output_len + 1 -- moved to call below rather than pay assignment overhead
 
-			arrayKey = arrayKey + 1
-
-			encoders[tv](v)
+		output_len = encoders[tv](v, output_len + 1, output)
+	end
+	
+	--[[for i = 1, arrLen do
+		local tk, tv
+		local v
+		v = val[i]
+		if cache[v] then
+			tv = 'ptr'
 		else
-			if cache[k] then
-				tk = 'ptr'
-			else
-				tk = type(k)
-			end
-
-			output[output_len] = type_pair_to_id[tk][tv]
-			output_len = output_len + 1
-
-			encoders[tk](k)
-			encoders[tv](v)
+			tv = type(v)
 		end
+
+		output[output_len] = type_pair_to_id_incr[tv]
+		output_len = output_len + 1
+
+		encoders[tv](v)
+	end]]
+
+	local arrLen = #val
+
+	for k,v in next , val , (arrLen ~= 0 and arrLen or nil) do
+		local tk, tv
+		if cache[v] then
+			tv = 'ptr'
+		else
+			tv = type(v)
+		end
+		
+		if cache[k] then
+			tk = 'ptr'
+		else
+			tk = type(k)
+		end
+
+		output[output_len] = type_pair_to_id[tk][tv]
+
+		-- output_len = output_len + 1 -- moved into the call below, saves a variable assignment
+		output_len = encoders[tv](v, 
+				encoders[tk](k, output_len + 1, output), 
+				output)
 	end
 
 	output[output_len] = seperator
-	output_len = output_len + 1
+	return output_len + 1
 end
 
 decoders['table'] = function()
@@ -138,19 +164,20 @@ decoders['table'] = function()
 	cache_size = cache_size + 1
 
 	local arrayKey = 1
-
+	
+	local key, typeChar
+	local ktype, vtype
 	while(index < strlen)do
-		local typeChar = string_sub(str, index, index)
+		typeChar = string_sub(str, index, index)
 		index = index + 1
 
 		if typeChar == seperator then
 			break
 		end
 
-		local ktype = id_to_key_type[typeChar]
-		local vtype = id_to_val_type[typeChar]
+		ktype = id_to_key_type[typeChar]
+		vtype = id_to_val_type[typeChar]
 
-		local key
 		if ktype == 'incr' then
 			key = arrayKey
 			arrayKey = arrayKey + 1
@@ -166,7 +193,7 @@ decoders['table'] = function()
 	return obj
 end
 
-encoders['ptr'] = function(val)
+encoders['ptr'] = function(val, output_len, output)
 	local val = cache[val]
 	while(val >= 47)do
 		output[output_len] = num_to_char[47+val%47]
@@ -175,7 +202,7 @@ encoders['ptr'] = function(val)
 		val = val - val%1
 	end
 	output[output_len] = num_to_char[val%47]
-	output_len = output_len + 1
+	return output_len + 1
 end
 
 decoders['ptr'] = function()
@@ -193,63 +220,47 @@ decoders['ptr'] = function()
 		end
 		multiplier = multiplier * 47
 	end
+
 	return cache[num]
 end
 
-encoders['number'] = function(val)
-	local decimal = val % 1
-	if val < 0 then
-		if decimal == 0 then
-			local strval = string_format('%x', -val)
-			local strlen = string_len(strval)
-			output[output_len] = num_to_char[40+strlen]..strval
-			output_len = output_len + 1
+encoders['number'] = function(val, output_len, output)
+	
+	if val % 1 == 0 then
+		if val < 0 then
+			output[output_len] = string_format('I%x;', -val)
 		else
-			local strval = (tostring(-val))
-			local strlen = string_len(strval)
-			output[output_len] =  num_to_char[60+strlen]..strval
-			output_len = output_len + 1
+			output[output_len] = string_format('i%x;', val)
 		end
 	else
-		if decimal == 0 then
-			local strval = string_format('%x', val)
-			local strlen = string_len(strval)
-			output[output_len] =  num_to_char[strlen]..strval
-			output_len = output_len + 1
+		if val < 0 then
+			output[output_len] = 'F'..-val..';'
 		else
-			local strval = (tostring(val))
-			local strlen = string_len(strval)
-			output[output_len] =  num_to_char[60+strlen]..strval
-			output_len = output_len + 1
+			output[output_len] = 'f'..val..';'
 		end
 	end
+
+	return output_len + 1
 end
 
 decoders['number'] = function()
-	local len = char_to_num[string_sub(str, index, index)]
-	index = index + 1
+	local mode = string_sub(str, index, index)
+	local _end = string_find(str, ';', index+1, true)
+	local number = string_sub(str, index+1, _end-1)
+	index = _end+1
 
-	local numType = len/20
-	numType = numType - numType % 1
-	len = len % 20
-
-	local num
-	if numType % 2 == 0 then
-		num = tonumber(string_sub(str, index, index+len-1), 16)
-		index = index + len
-	else
-		num = tonumber(string_sub(str, index, index+len-1))
-		index = index + len
-	end
-
-	if numType < 2 then
-		return num
-	else
-		return -num
+	if mode == 'i' then
+		return tonumber(number, 16)
+	elseif mode == 'I' then
+		return -tonumber(number, 16)
+	elseif mode == 'f' then
+		return tonumber(number)
+	elseif mode == 'F' then
+		return -tonumber(number)
 	end
 end
 
-encoders['string'] = function(val)
+encoders['string'] = function(val, output_len, output)
 	-- cache the string
 	cache[val] = cache_size
 	cache_size = cache_size + 1
@@ -267,7 +278,7 @@ encoders['string'] = function(val)
 	output_len = output_len + 1
 
 	output[output_len] = val
-	output_len = output_len + 1
+	return output_len + 1
 end
 
 decoders['string'] = function()
@@ -293,8 +304,8 @@ decoders['string'] = function()
 	return str
 end
 
-encoders['Entity'] = function(val)
-	local val = val:EntIndex()
+encoders['Entity'] = function(val, output_len, output)
+	val = val:EntIndex()
 	while(val >= 47)do
 		output[output_len] = num_to_char[47+val%47]
 		output_len = output_len + 1
@@ -302,7 +313,7 @@ encoders['Entity'] = function(val)
 		val = val - val%1
 	end
 	output[output_len] = num_to_char[val%47]
-	output_len = output_len + 1
+	return output_len + 1
 end
 encoders['Player'] 	= encoders['Entity']
 encoders['Vehicle'] = encoders['Entity']
@@ -338,10 +349,12 @@ decoders['NextBot'] = decoders['Entity']
 local writeNumber = encoders['number']
 local readNumber = decoders['number']
 
-encoders['Vector'] = function(val)
-	writeNumber(val.x)
-	writeNumber(val.y)
-	writeNumber(val.z)
+encoders['Vector'] = function(val, output_len, output)
+	return writeNumber(val.z, 
+		writeNumber(val.y, 
+			writeNumber(val.x, output_len, output), 
+			output), 
+		output)
 end
 
 decoders['Vector'] = function(val)
@@ -349,9 +362,11 @@ decoders['Vector'] = function(val)
 end
 
 encoders['Angle'] = function(val)
-	writeNumber(val.p)
-	writeNumber(val.y)
-	writeNumber(val.r)
+	return writeNumber(val.r, 
+		writeNumber(val.y, 
+			writeNumber(val.p, output_len, output), 
+			output), 
+		output)
 end
 decoders['Angle'] = function(val)
 	return Angle(readNumber(), readNumber(), readNumber())
@@ -361,10 +376,10 @@ end
 
 
 
-pon2.encode = function(val)
+pon2_dev.encode = function(val)
 	cache_size = 0
 	output_len = 1
-	encoders['table'](val, output, cache)
+	encoders['table'](val, output_len, output)
 	local result = table_concat(output)
 
 	for i = 1, output_len do
@@ -377,7 +392,7 @@ pon2.encode = function(val)
 	return result
 end
 
-pon2.decode = function(val)
+pon2_dev.decode = function(val)
 	cache_size = 0
 	index = 1
 	str = val

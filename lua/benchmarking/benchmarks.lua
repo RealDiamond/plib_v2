@@ -1,4 +1,5 @@
 require 'pon'
+require 'pon2'
 include 'pon_v2.lua'
 include 'von.lua'
 include 'willox.lua'
@@ -25,6 +26,7 @@ local function addTestData(name, data)
 end
 
 addLibrary('pon v2', pon2.encode, pon2.decode)
+addLibrary('pon v2 dev', pon2_dev.encode, pon2_dev.decode)
 addLibrary('pon', pon.encode, pon.decode)
 addLibrary('von', von.serialize, von.deserialize)
 
@@ -121,13 +123,30 @@ end
 
 MsgC(Color(255,255,255), '\n\nDONE RUNNING TESTS!!!\n\n')
 
+for k,test in pairs(testData) do
+	test.best_encode = math.huge
+	test.best_decode = math.huge
+	for _, serializer in pairs(serializers)do
+		local td = serializer.times[test].decode
+		local te = serializer.times[test].encode
+		if te < test.best_encode then
+			test.best_encode = te
+		end
+		if td < test.best_decode then
+			test.best_decode = td
+		end
+	end
+end
+
 for k,serializer in pairs(serializers)do
 	MsgC(Color(0,200,200), '\nSerializer: ' .. serializer.name .. '\n')
 
 	for testData, times in pairs(serializer.times)do
+		local dd = times.decode - testData.best_decode
+		local de = times.encode - testData.best_encode
 		MsgC(Color(220,220,220),'\tData Set: ' .. testData.name .. '\n')
-		MsgC(Color(170,170,170),'\t\tencode: ' .. times.encode .. '\n')
-		MsgC(Color(170,170,170),'\t\tdecode: ' .. times.decode .. '\n')
+		MsgC(de == 0 and Color(170,200,170) or Color(170,170,170),'\t\tencode: ' .. times.encode .. ' ('..de..')\n')
+		MsgC(dd == 0 and Color(170,200,170) or Color(170,170,170),'\t\tdecode: ' .. times.decode .. ' ('..dd..')\n')
 	end
 end
 
