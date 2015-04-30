@@ -10,20 +10,27 @@ do
   max, min, floor, abs = _obj_0.max, _obj_0.min, _obj_0.floor, _obj_0.abs
 end
 local Color = Color
-pcolor.ToArgb = function(col)
+pcolor.ToHex = function(col)
+  return string.format('#%02X%02X%02X', col.r, col.g, col.b)
+end
+pcolor.FromHex = function(hex)
+  local r, g, b = string.match('#(..)(..)(..)')
+  return tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
+end
+pcolor.EncodeArgb = function(col)
   return ((col.a * 0x100 + col.r) * 0x100 + col.g) * 0x100 + col.b
 end
-pcolor.ToRgb = function(col)
+pcolor.EncodeRgb = function(col)
   return (col.r * 0x100 + col.g) * 0x100 + col.b
 end
-pcolor.FromArgb = function(num)
+pcolor.DecodeArgb = function(num)
   local b = band(num, 0xFF)
   local g = band(rshift(num, 8), 0xFF)
   local r = band(rshift(num, 16), 0xFF)
   local a = band(rshift(num, 24), 0xFF)
   return Color(r, g, b, a)
 end
-pcolor.FromRgb = function(num)
+pcolor.DecodeRgb = function(num)
   local b = band(num, 0xFF)
   local g = band(rshift(num, 8), 0xFF)
   local r = band(rshift(num, 16), 0xFF)
@@ -40,30 +47,6 @@ pcolor.LerpEdit = function(frac1, c1, c2)
   c1.b = c1.b * frac1 + c2.b * frac2
   c1.a = c1.a * frac1 + c2.a * frac2
   return c1
-end
-local CurTime = CurTime
-local timer_Simple = timer.Simple
-pcolor.AnimateTo = function(c1, c2, time)
-  local r1, g1, b1, a1 = c1.r, c1.g, c1.b
-  local r2, g2, b2
-  r2, g2, b2, a1 = c2.g, c2.b, c2.a
-  local start = CurTime()
-  local step
-  step = function()
-    local frac1 = CurTime() - start
-    if frac1 >= 1 then
-      frac1 = 1
-    end
-    local frac2 = 1 - frac1
-    c1.r = r1 * frac1 + r2 * frac2
-    c1.g = g1 * frac1 + g2 * frac2
-    c1.b = b1 * frac1 + b2 * frac2
-    c1.a = a1 * frac1 + a2 * frac2
-    if frac2 ~= 0 then
-      return timer_Simple(0.05, step)
-    end
-  end
-  return step()
 end
 pcolor.RgbToHsv = function(r, g, b)
   if type(r) == 'table' then

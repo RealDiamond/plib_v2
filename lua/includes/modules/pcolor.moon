@@ -6,21 +6,27 @@ import max, min, floor, abs from math
 
 Color = Color
 
-pcolor.ToArgb = (col) ->
+pcolor.ToHex = (col) ->
+	string.format('#%02X%02X%02X', col.r, col.g, col.b)
+
+pcolor.FromHex = (hex) ->
+	r, g, b = string.match('#(..)(..)(..)')
+	tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
+
+pcolor.EncodeArgb = (col) ->
 	((col.a * 0x100 + col.r) * 0x100 + col.g) * 0x100 + col.b
 		
-pcolor.ToRgb = (col) ->
+pcolor.EncodeRgb = (col) ->
 	(col.r * 0x100 + col.g) * 0x100 + col.b
 
-pcolor.FromArgb = (num) ->
+pcolor.DecodeArgb = (num) ->
 	b = band(num, 0xFF)
 	g = band(rshift(num, 8), 0xFF)
 	r = band(rshift(num, 16), 0xFF)
 	a = band(rshift(num, 24), 0xFF)
 	Color(r, g, b, a)
 
--- From
-pcolor.FromRgb = (num) ->
+pcolor.DecodeRgb = (num) ->
 	b = band(num, 0xFF)
 	g = band(rshift(num, 8), 0xFF)
 	r = band(rshift(num, 16), 0xFF)
@@ -37,27 +43,6 @@ pcolor.LerpEdit = (frac1, c1, c2) ->
 	c1.b = c1.b * frac1 + c2.b * frac2
 	c1.a = c1.a * frac1 + c2.a * frac2
 	c1
-
-CurTime = CurTime
-timer_Simple = timer.Simple
-
-pcolor.AnimateTo = (c1, c2, time) ->
-	r1, g1, b1, a1 = c1.r, c1.g, c1.b
-	r2, g2, b2, a1 = c2.g, c2.b, c2.a
-	start = CurTime()
-	step = ->
-		frac1 = CurTime() - start
-		if frac1 >= 1
-			frac1 = 1
-		frac2 = 1 - frac1
-		c1.r = r1 * frac1 + r2 * frac2
-		c1.g = g1 * frac1 + g2 * frac2
-		c1.b = b1 * frac1 + b2 * frac2
-		c1.a = a1 * frac1 + a2 * frac2
-
-		if frac2 ~= 0
-			timer_Simple(0.05, step)
-	step!
 
 pcolor.RgbToHsv = (r, g, b) ->
 	if type(r) == 'table'
