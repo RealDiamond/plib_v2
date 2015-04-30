@@ -14,8 +14,8 @@ pcolor.ToHex = function(col)
   return string.format('#%02X%02X%02X', col.r, col.g, col.b)
 end
 pcolor.FromHex = function(hex)
-  local r, g, b = string.match('#(..)(..)(..)')
-  return tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
+  local r, g, b = string.match(hex, '#(..)(..)(..)')
+  return Color(tonumber(r, 16), tonumber(g, 16), tonumber(b, 16))
 end
 pcolor.EncodeArgb = function(col)
   return ((col.a * 0x100 + col.r) * 0x100 + col.g) * 0x100 + col.b

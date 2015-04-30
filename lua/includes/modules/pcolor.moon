@@ -10,8 +10,8 @@ pcolor.ToHex = (col) ->
 	string.format('#%02X%02X%02X', col.r, col.g, col.b)
 
 pcolor.FromHex = (hex) ->
-	r, g, b = string.match('#(..)(..)(..)')
-	tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
+	r, g, b = string.match(hex, '#(..)(..)(..)')
+	Color tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
 
 pcolor.EncodeArgb = (col) ->
 	((col.a * 0x100 + col.r) * 0x100 + col.g) * 0x100 + col.b
