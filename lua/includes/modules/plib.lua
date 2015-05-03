@@ -40,9 +40,8 @@ p.include_cl = (SERVER) and AddCSLuaFile or include
 p.include_sh = function(p) p.include_sv(p) p.include_cl(p) end
 p.include = p.include_sh
 
-local old_require = require
 function p.require(n)
-	local succ, err = pcall(old_require, n)
+	local succ, err = pcall(require, n)
 	if not succ then
 		return p.error('Failed to load module: ' .. n)
 	end
@@ -181,3 +180,4 @@ function p.PrintTable(tbl, spaces, done)
 		MsgN''
 	end
 end
+PrintTable = p.PrintTable
