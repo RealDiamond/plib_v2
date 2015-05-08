@@ -27,8 +27,8 @@ function net.WriteStream(data, targs)
 		-- compression
 		block = util.Compress(block)
 
-		local size = block:len()
-		if block and block:len() > 0 then
+		if block then
+			local size = block:len()
 			net.Start('pns')
 				net.WriteUInt(txnid, 16)
 				net.WriteUInt(size, 16)
