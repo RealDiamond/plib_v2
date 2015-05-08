@@ -1,5 +1,8 @@
 local txnid = 0;
 
+local BLOCK_SIZE = 2^16-2^10
+local BLODK_SIZE_m1 = BLOCK_SIZE - 1
+
 if SERVER then 
 	util.AddNetworkString('pns');
 	AddCSLuaFile();
@@ -12,8 +15,8 @@ function net.WriteStream(data, targs)
 	-- iterate over the data to send
 	local count = 0;
 	local iter = function()
-		local seg = data:sub(count, count + 0x7FFF);
-		count = count + 0x8000;
+		local seg = data:sub(count, count + BLODK_SIZE_m1);
+		count = count + BLOCK_SIZE;
 
 		return seg;
 	end
@@ -21,6 +24,10 @@ function net.WriteStream(data, targs)
 	-- send a chunk of data
 	local function send()
 		local block = iter();
+
+		-- compression
+		block = util.Compress(block)
+
 		local size = block:len();
 		if block and block:len() > 0 then
 			net.Start('pns');
@@ -38,7 +45,7 @@ function net.WriteStream(data, targs)
 
 	-- write txnid and chunks to be expected
 	net.WriteUInt(txnid, 16);
-	net.WriteUInt(math.ceil(data:len()/ 0x8000), 16);
+	net.WriteUInt(math.ceil(data:len() / BLOCK_SIZE), 16);
 	
 	timer.Simple(0.1, send);
 end
@@ -65,6 +72,10 @@ if SERVER then
 
 		local size = net.ReadUInt(16);
 		local data = net.ReadData(size);
+
+		-- decompression
+		data = util.Decompress(data)
+
 		bucket[#bucket+1] = data;
 
 		if #bucket == bucket.len then
@@ -91,6 +102,10 @@ else
 
 		local size = net.ReadUInt(16);
 		local data = net.ReadData(size);
+
+		-- decompression
+		data = util.Decompress(data)
+
 		bucket[#bucket+1] = data;
 
 		if #bucket == bucket.len then

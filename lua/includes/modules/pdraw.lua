@@ -176,9 +176,10 @@ end
 --
 local Vector = Vector
 local Matrix = Matrix
+
 function draw.TextRotated(text, x, y, color, font, ang)
-	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
-	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	surface.SetFont(font)
 	surface.SetTextColor(color)
 	local textWidth, textHeight = surface.GetTextSize( text )
@@ -191,6 +192,6 @@ function draw.TextRotated(text, x, y, color, font, ang)
 		surface.SetTextPos(0, 0)
 		surface.DrawText(text)
 	cam.PopModelMatrix()
-	render.PopFilterMag()
-	render.PopFilterMin()
+	--render.PopFilterMag()
+	--render.PopFilterMin()
 end
