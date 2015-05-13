@@ -39,14 +39,14 @@ function net.WriteStream(data, targs)
 			net.SendToServer()
 			end
 		end
-		timer.Simple(0.001, send)
+		timer.Simple(0.1, send)
 	end
 
 	-- write txnid and chunks to be expected
 	net.WriteUInt(txnid, 16)
 	net.WriteUInt(math.ceil(data:len() / BLOCK_SIZE), 16)
 	
-	timer.Simple(0.001, send)
+	timer.Simple(0.1, send)
 end
 
 local buckets = {}
