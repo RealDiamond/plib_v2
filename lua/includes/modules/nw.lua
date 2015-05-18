@@ -1,6 +1,6 @@
 nw 				= nw 			or {}
 nw.Stored 		= nw.Stored 	or {}
-nw.VarFuncs		= nw.VarFuncs 	or {}
+nw.VarInfo		= nw.VarInfo 	or {}
 nw.Callbacks 	= nw.Callbacks 	or {}
 
 local nw 		= nw
@@ -12,20 +12,15 @@ local player 	= player
 local ENTITY 	= FindMetaTable('Entity')
 
 local ReadType
-local GetFilter
 if (SERVER) then
 	util.AddNetworkString('nw.var')
 	util.AddNetworkString('nw.clear')
 	util.AddNetworkString('nw.delete')
 	util.AddNetworkString('nw.ping')
 
-	function GetFilter(ent, var, value)
-		return (nw.VarFuncs[var] ~= nil and nw.VarFuncs[var].Filter ~= nil) and nw.VarFuncs[var].Filter(ent, var, value) or player.GetAll()
-	end
-
 	local function SendVar(ent, var, value, filter)
-		if (nw.VarFuncs[var] ~= nil) and (nw.VarFuncs[var].Send ~= nil) then
-			nw.VarFuncs[var].Send(ent, value, filter)
+		if (nw.VarInfo[var] ~= nil) and (nw.VarInfo[var].Write ~= nil) then
+			nw.VarInfo[var].Write(ent, value, filter)
 		else
 			local index = ent:EntIndex()
 			
@@ -35,7 +30,7 @@ if (SERVER) then
 				net.WriteType(value)
 			net.Broadcast()
 
-			MsgC(Color(255,0,0), 'UNREGISTERED VAR: ' .. var)
+			MsgC(Color(255,0,0), 'UNREGISTERED NW VAR: ' .. var)
 		end
 	end
 
@@ -60,7 +55,9 @@ if (SERVER) then
 			for index, vars in pairs(nw.Stored) do
 				local ent = Entity(index)
 				for var, value in pairs(vars) do
-					SendVar(Entity(index), var, value, pl)
+					if not nw.VarInfo[var] or not nw.VarInfo[var].LocalVar then
+						SendVar(Entity(index), var, value, pl)
+					end
 				end
 			end
 
@@ -76,12 +73,16 @@ if (SERVER) then
 	function nw.WaitForPlayer(pl, callback)
 		if (pl.EntityCreated == true) then
 			callback(pl)
-			return
+		else
+			if (nw.Callbacks[pl] == nil) then
+				nw.Callbacks[pl] = {}
+			end
+			nw.Callbacks[pl][#nw.Callbacks[pl] + 1] = callback
 		end
-		if (nw.Callbacks[pl] == nil) then
-			nw.Callbacks[pl] = {}
-		end
-		nw.Callbacks[pl][#nw.Callbacks[pl] + 1] = callback
+	end
+
+	function nw.SetGlobal(var, value)
+		game.GetWorld():SetNetVar(var, value)
 	end
 
 	hook.Add('EntityRemoved', 'nw.EntityRemoved', function(ent)
@@ -93,7 +94,7 @@ if (SERVER) then
 			nw.Stored[index] = nil
 		end
 	end)
-elseif (CLIENT) then
+else
 	function ReadType()
 		local t = net.ReadUInt(8)
 		return net.ReadType(t)
@@ -133,18 +134,24 @@ function ENTITY:GetNetVar(var)
 	if (nw.Stored[index] ~= nil) then
 		return nw.Stored[index][var]
 	end
-	return nil
 end
 
-function nw.Register(var, funcs) -- always call this shared
+function nw.GetGlobal(var)
+	return game.GetWorld():GetNetVar(var)
+end
+
+function nw.Register(var, info) -- always call this shared
+	info = info or {}
 	if (SERVER) then
 		util.AddNetworkString('nw_' ..  var)
-	elseif (CLIENT) then
-		local ReadFunc = ((funcs and funcs.Read) and funcs.Read or ReadType)
+	else
+		local ReadFunc = (info.Read or ReadType)
 
-		net.Receive('nw_' ..  var, function()
-			local index = net.ReadUInt(12)
+		net.Receive('nw_' ..  var, function(l)
 			local value = ReadFunc()
+			local index = info.LocalVar and LocalPlayer():EntIndex() or net.ReadUInt(12)
+
+			print(var, value, index)
 
 			if (nw.Stored[index] == nil) then
 				nw.Stored[index] = {}
@@ -154,25 +161,29 @@ function nw.Register(var, funcs) -- always call this shared
 		end)
 	end
 
-	local WriteFunc = ((funcs and funcs.Write) and funcs.Write or net.WriteType)
+	local WriteFunc = (info.Write or net.WriteType)
+	local FilterFunc = (info.Filter or player.GetAll)
 
-	nw.VarFuncs[var] = {
-		Send 	= function(ent, value, filter)
+	nw.VarInfo[var] = {
+		Write = function(ent, value, filter)
 			local index = ent:EntIndex()
 
 			if (value == nil) then
 				net.Start('nw.delete')
 					net.WriteUInt(index, 12)
 					net.WriteString(var)
-				net.Send(filter or GetFilter(ent, var, value))
-				return
-			end
-
-			net.Start('nw_' ..  var)
-				net.WriteUInt(index, 12)
+				net.Send(filter or FilterFunc(ent, var, value))
+			else
+				net.Start('nw_' ..  var)
 				WriteFunc(value)
-			net.Send(filter or GetFilter(ent, var, value))
+				if info.LocalVar then
+					net.Send(ent)
+				else
+					net.WriteUInt(index, 12)
+					net.Send(filter or FilterFunc(ent, var, value))
+				end
+			end
 		end,
-		Filter 	= (funcs and funcs.Filter or nil)
+		LocalVar = info.LocalVar
 	}
 end
