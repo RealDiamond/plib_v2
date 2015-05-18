@@ -151,8 +151,6 @@ function nw.Register(var, info) -- always call this shared
 			local value = ReadFunc()
 			local index = info.LocalVar and LocalPlayer():EntIndex() or net.ReadUInt(12)
 
-			print(var, value, index)
-
 			if (nw.Stored[index] == nil) then
 				nw.Stored[index] = {}
 			end
