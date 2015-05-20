@@ -13,66 +13,69 @@ do
   local _obj_0 = _G
   pairs, ipairs, table = _obj_0.pairs, _obj_0.ipairs, _obj_0.table
 end
-local formatValue, formatTableElement, escapeColumn
-local formatters = { }
-formatValue = function(val, db, noParens)
-  return formatters[type(val)](val, db, noParens)
-end
-formatters['number'] = function(val, db)
-  return tostring(val)
-end
-formatters['string'] = function(val, db)
-  return '\'' .. db:escape(val) .. '\''
-end
-formatters['table'] = function(val, db, noParens)
-  if val[1] ~= nil then
-    local vals
-    do
-      local _accum_0 = { }
-      local _len_0 = 1
-      for _index_0 = 1, #val do
-        local v = val[_index_0]
-        _accum_0[_len_0] = formatValue(v, db)
-        _len_0 = _len_0 + 1
+local formatters, formattersQuoted
+formatters = {
+  string = function(v, db)
+    return db:escape(val)
+  end,
+  table = function(v, db)
+    if #v == 0 then
+      local vals
+      do
+        local _accum_0 = { }
+        local _len_0 = 1
+        for _index_0 = 1, #v do
+          local val = v[_index_0]
+          local tv = type(val)
+          local _value_0 = formattersQuoted[tv](val, db)
+          _accum_0[_len_0] = _value_0
+          _len_0 = _len_0 + 1
+        end
+        vals = _accum_0
       end
-      vals = _accum_0
-    end
-    if noParens then
       return table.concat(vals, ',')
     else
-      return '(' .. table.concat(vals, ',') .. ')'
-    end
-  else
-    local vals
-    do
-      local _accum_0 = { }
-      local _len_0 = 1
-      for k, v in pairs(val) do
-        _accum_0[_len_0] = '`' .. k .. '`=' .. formatValue(v, db)
-        _len_0 = _len_0 + 1
+      local vals
+      do
+        local _accum_0 = { }
+        local _len_0 = 1
+        for k, v in pairs(v) do
+          local tv = type(v)
+          local _value_0 = '`' .. k .. '`=' .. formattersQuoted[tv](v, db)
+          _accum_0[_len_0] = _value_0
+          _len_0 = _len_0 + 1
+        end
+        vals = _accum_0
       end
-      vals = _accum_0
+      return table.concat(vals, ',')
     end
-    return table.concat(vals, ',')
+  end,
+  number = function(v, db)
+    return tostring(v)
   end
-end
-formatTableElement = function(db, k, v)
-  local t = type(k)
-  if t == 'number' then
-    local tv = type(v)
-    if tv == 'table' then
-      return '(' .. formatValue(db, v) .. ')'
-    else
-      return formatValue(db, v)
-    end
-  elseif t == 'string' then
-    return '`' .. k .. '`=' .. formatValue(db, v)
+}
+formattersQuoted = {
+  table = function(v, db)
+    return '(' .. formatters.table(v, db) .. ')'
+  end,
+  string = function(v, db)
+    return '\'' .. formatters.string(v, db) .. '\''
+  end,
+  number = formatters.number
+}
+local formatValue
+formatValue = function(v, db, simple)
+  local tv = type(v)
+  if tv == 'table' then
+    return formatterspQuoted['table'](v, db)
+  else
+    return formatters[tv](v, db)
   end
 end
 local formatArguments
 formatArguments = function(db, args)
   for k, v in ipairs(args) do
-    args[k] = formatValue(v, db, true)
+    args[k] = formatValue(v, db)
   end
 end
 local databases = { }
@@ -173,6 +176,7 @@ do
         count = count + 1
         return args[count]
       end)
+      print(sqlstr)
       return self:_query(sqlstr, cback)
     end,
     query_sync = function(self, sqlstr, ...)

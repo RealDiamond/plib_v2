@@ -12,42 +12,42 @@ import pairs, ipairs, table from _G
 --
 -- UTILITIES
 --
-local formatValue, formatTableElement, escapeColumn
+local formatters, formattersQuoted
 
-formatters = {}
-formatValue = (val,db,noParens) ->
-	formatters[type(val)](val, db, noParens)
-
-formatters['number'] = (val,db) ->
-	tostring(val)
-formatters['string'] = (val,db) ->
-	'\''..db\escape(val)..'\''
-formatters['table'] = (val,db,noParens) ->
-	if val[1] ~= nil
-		vals = [formatValue(v,db) for v in *val]
-		if noParens
+formatters = 
+	string: (v, db) ->
+		db\escape(val)
+	table: (v, db) ->
+		if #v == 0
+			vals = for val in *v
+				tv = type(val)
+				formattersQuoted[tv](val, db)
 			table.concat(vals, ',')
 		else
-			'('..table.concat(vals, ',')..')'
-	else
-		vals = ['`'..k..'`='..formatValue(v,db) for k,v in pairs(val)]
-		table.concat vals, ','
+			vals = for k, v in pairs v
+				tv = type(v)
+				'`'..k..'`='..formattersQuoted[tv](v, db)
+			table.concat(vals, ',')
+	number: (v, db) ->
+		tostring(v)
 
-formatTableElement = (db, k, v) ->
-	t = type(k)
-	if t == 'number'
-		tv = type(v)
-		if tv == 'table'
-			'('..formatValue(db, v)..')'
-		else
-			formatValue(db, v)
-	elseif t == 'string'
-		-- eventually the column name 'k' should be escaped
-		'`'.. k .. '`=' .. formatValue(db, v)
+formattersQuoted = 
+	table: (v, db) ->
+		'(' .. formatters.table(v, db) .. ')'
+	string: (v, db) ->
+		'\'' .. formatters.string(v, db) .. '\''
+	number: formatters.number
+
+formatValue = (v, db, simple) ->
+	tv = type(v)
+	if tv == 'table'
+		formatterspQuoted['table'](v, db)
+	else
+		formatters[tv](v, db)
 
 formatArguments = (db, args) ->
 	for k,v in ipairs(args)
-		args[k] = formatValue(v,db,true)
+		args[k] = formatValue(v, db)
 
 databases = {}
 
@@ -141,6 +141,8 @@ class Db
 		sqlstr = sqlstr\gsub '?', (match) ->
 			count += 1
 			return args[count]
+
+		print(sqlstr)
 
 		return @_query(sqlstr, cback)
 
