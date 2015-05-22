@@ -9,6 +9,16 @@ mysqloo = mysqloo
 import tostring, string, unpack, type from _G
 import pairs, ipairs, table from _G
 
+
+color_white = Color 255, 255, 255
+color_grey = Color 200, 200, 200
+print = (...) ->
+	_G.MsgC(color_white, 'EzSQL ')
+	col = color_grey
+	for i = 1, (select '#', ...)
+		_G.MsgC col, tostring(select(i, ...))
+	_G.MsgN()
+
 --
 -- UTILITIES
 --
@@ -16,7 +26,7 @@ local formatters, formattersQuoted
 
 formatters = 
 	string: (v, db) ->
-		db\escape(val)
+		db\escape(v)
 	table: (v, db) ->
 		if #v == 0
 			vals = for val in *v
@@ -38,57 +48,100 @@ formattersQuoted =
 		'\'' .. formatters.string(v, db) .. '\''
 	number: formatters.number
 
-formatValue = (v, db, simple) ->
-	tv = type(v)
-	if tv == 'table'
-		formatterspQuoted['table'](v, db)
-	else
-		formatters[tv](v, db)
-
 formatArguments = (db, args) ->
-	for k,v in ipairs(args)
-		args[k] = formatValue(v, db)
+	for k,v in pairs(args)
+		tv = type(v)
+		if tv == 'table'
+			args[k] = formattersQuoted['table'](v, db)
+		else
+			args[k] = formatters[tv](v, db)
 
 databases = {}
 
 class Db
-	new: ( host, username, password, database, port ) =>
-		if type(host) == 'string'
-			@connect_new(host, username, password, database, port, socket, flags)
-		elseif type(host) == 'table' and host.db and tostring(host.db)\find('Database')
-			@connect_resume(host)
-		else
-			error 'could not initialize database object'
+	new: ( options, ... ) =>
+		host, user, pass, db, port = options, ...
 
-	connect_new: (host, username, password, database, port = '3306') =>
-		error('must provide host') unless host
-		error('must provide username') unless username
-		error('must provide password') unless password
-		error('must provide database') unless database
+		if type(host) == 'string' and user
+			@connect_new {
+				host: host,
+				user: user,
+				pass: pass,
+				db: db,
+				port: port
+			}
+		elseif type(options) == 'table'
+			if options.__class and options.__class == self.__class
+				@connect_shared options
+			else
+				@connect_new options
+
+	connect_new: (options) =>
+		{
+			:host,
+			:user,
+			:pass,
+			:db,
+			:port,
+			:socket,
+			:flags
+		} = options
+
+		error 'must provide .host (host:port)' unless host
+		error 'must provide .user (mysql username)' unless user
+		error 'must provide .pass (password)' unless pass
+		error 'must provide .db (database name)' unless db
+		_host, _port = host\match('(.-):(.-)$')
+		if _host and _port
+			host = _host
+			port = tonumber(_port)
+		error 'must provide .port or host:port' unless port
 
 		@host = host
-		@username = username
-		@datbase = database
+		@username = user
+		@database = db
 		@port = port
 
-		@hash = string.format('%s:%s@%X:%s', host, port, util.CRC(username..'-'..password), database)
+		@hash = string.format('%s:%s@%s-%X', host, port, user, util.CRC(user..'-'..pass\sub(2)), db)
+
 		if databases[@hash]
 			@db = databases[@hash]
-			dprint('recycled database connection with hashid: '..@hash)
+			print 'recycled database connection hashid: ' .. @hash
 		else
-			@db = mysqloo.connect( host, username, password, database, port )
-			databases[@hash] = @db -- cache the connection so other instances can recycle it
-			
+			@db = mysqloo.connect host, user, pass, db, port
+			databases[@hash] = @db
+
 			-- events on connection
-			@db.onConnected = () => 
-				MsgC(Color(0,255,0), 'ezSQLoo connected successfully.\n')
-			@db.onConnectionFailed = (err) =>
-				MsgC(Color(255,0,0), 'ezSQLoo connection failed\n')
-				error(err)
-			
-			dprint('started new db connection with hash: '..@hash)
+			@db.onConnected = () ->
+				print @hash .. ' connected successfully.'
+			@db.onConnectionFailed = (_, err) ->
+				print Color(255,0,0), @hash .. ' failed to establish connection: ' .. err
+				@invalidate!
 
 			@connect!
+
+	connect_shared: (db) =>
+		@hash = db.hash
+		@host = db.host
+		@username = db.username
+		@database = db.database
+		@port = db.port
+		@db = db.db
+
+	connect: () =>
+		t = SysTime!
+		print @hash .. ' establishing connection...'
+		@db\connect!
+		@db\wait!
+		dt = SysTime! - t
+		print '\ttook ' .. dt .. ' seconds.'
+
+	invalidate: () =>
+		databases[@hash] = nil
+		@query = () ->
+			error 'failed to connect to database'
+		@_query = () ->
+			error 'failed to connect to database'
 
 	connect_resume: (db) =>
 		@hash = db.hash
@@ -97,13 +150,6 @@ class Db
 		@database = db.database
 		@port = db.port
 		@db = db.db
-
-	connect: =>
-		MsgC(Color(0,255,0), 'ezSQLoo connecting to database\n')
-		start = SysTime!
-		@db\connect!
-		@db\wait!
-		MsgC(Color(155,155,155), 'ezSQLoo connect operation complete. took: '..(SysTime! - start)..' seconds\n')
 
 	escape: (str) =>
 		return @db\escape(str)
@@ -116,9 +162,9 @@ class Db
 			if @db\status! == mysqloo.DATABASE_NOT_CONNECTED
 				@connect!
 
-			dprint('QUERY FAILED!')
-			dprint('SQL: '..sqlstr)
-			dprint('ERR: '..err)
+			ErrorNoHalt('QUERY FAILED!')
+			print('SQL: '..sqlstr)
+			print('ERR: '..err)
 			
 			callback(nil, err) if callback
 
@@ -141,8 +187,6 @@ class Db
 		sqlstr = sqlstr\gsub '?', (match) ->
 			count += 1
 			return args[count]
-
-		print(sqlstr)
 
 		return @_query(sqlstr, cback)
 

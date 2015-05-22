@@ -13,10 +13,21 @@ do
   local _obj_0 = _G
   pairs, ipairs, table = _obj_0.pairs, _obj_0.ipairs, _obj_0.table
 end
+local color_white = Color(255, 255, 255)
+local color_grey = Color(200, 200, 200)
+local print
+print = function(...)
+  _G.MsgC(color_white, 'EzSQL ')
+  local col = color_grey
+  for i = 1, (select('#', ...)) do
+    _G.MsgC(col, tostring(select(i, ...)))
+  end
+  return _G.MsgN()
+end
 local formatters, formattersQuoted
 formatters = {
   string = function(v, db)
-    return db:escape(val)
+    return db:escape(v)
   end,
   table = function(v, db)
     if #v == 0 then
@@ -63,61 +74,88 @@ formattersQuoted = {
   end,
   number = formatters.number
 }
-local formatValue
-formatValue = function(v, db, simple)
-  local tv = type(v)
-  if tv == 'table' then
-    return formatterspQuoted['table'](v, db)
-  else
-    return formatters[tv](v, db)
-  end
-end
 local formatArguments
 formatArguments = function(db, args)
-  for k, v in ipairs(args) do
-    args[k] = formatValue(v, db)
+  for k, v in pairs(args) do
+    local tv = type(v)
+    if tv == 'table' then
+      args[k] = formattersQuoted['table'](v, db)
+    else
+      args[k] = formatters[tv](v, db)
+    end
   end
 end
 local databases = { }
 local Db
 do
   local _base_0 = {
-    connect_new = function(self, host, username, password, database, port)
-      if port == nil then
-        port = '3306'
-      end
+    connect_new = function(self, options)
+      local host, user, pass, db, port, socket, flags
+      host, user, pass, db, port, socket, flags = options.host, options.user, options.pass, options.db, options.port, options.socket, options.flags
       if not (host) then
-        error('must provide host')
+        error('must provide .host (host:port)')
       end
-      if not (username) then
-        error('must provide username')
+      if not (user) then
+        error('must provide .user (mysql username)')
       end
-      if not (password) then
-        error('must provide password')
+      if not (pass) then
+        error('must provide .pass (password)')
       end
-      if not (database) then
-        error('must provide database')
+      if not (db) then
+        error('must provide .db (database name)')
+      end
+      local _host, _port = host:match('(.-):(.-)$')
+      if _host and _port then
+        host = _host
+        port = tonumber(_port)
+      end
+      if not (port) then
+        error('must provide .port or host:port')
       end
       self.host = host
-      self.username = username
-      self.datbase = database
+      self.username = user
+      self.database = db
       self.port = port
-      self.hash = string.format('%s:%s@%X:%s', host, port, util.CRC(username .. '-' .. password), database)
+      self.hash = string.format('%s:%s@%s-%X', host, port, user, util.CRC(user .. '-' .. pass:sub(2)), db)
       if databases[self.hash] then
         self.db = databases[self.hash]
-        return dprint('recycled database connection with hashid: ' .. self.hash)
+        return print('recycled database connection hashid: ' .. self.hash)
       else
-        self.db = mysqloo.connect(host, username, password, database, port)
+        self.db = mysqloo.connect(host, user, pass, db, port)
         databases[self.hash] = self.db
-        self.db.onConnected = function(self)
-          return MsgC(Color(0, 255, 0), 'ezSQLoo connected successfully.\n')
+        self.db.onConnected = function()
+          return print(self.hash .. ' connected successfully.')
         end
-        self.db.onConnectionFailed = function(self, err)
-          MsgC(Color(255, 0, 0), 'ezSQLoo connection failed\n')
-          return error(err)
+        self.db.onConnectionFailed = function(_, err)
+          print(Color(255, 0, 0), self.hash .. ' failed to establish connection: ' .. err)
+          return self:invalidate()
         end
-        dprint('started new db connection with hash: ' .. self.hash)
         return self:connect()
+      end
+    end,
+    connect_shared = function(self, db)
+      self.hash = db.hash
+      self.host = db.host
+      self.username = db.username
+      self.database = db.database
+      self.port = db.port
+      self.db = db.db
+    end,
+    connect = function(self)
+      local t = SysTime()
+      print(self.hash .. ' establishing connection...')
+      self.db:connect()
+      self.db:wait()
+      local dt = SysTime() - t
+      return print('\ttook ' .. dt .. ' seconds.')
+    end,
+    invalidate = function(self)
+      databases[self.hash] = nil
+      self.query = function()
+        return error('failed to connect to database')
+      end
+      self._query = function()
+        return error('failed to connect to database')
       end
     end,
     connect_resume = function(self, db)
@@ -127,13 +165,6 @@ do
       self.database = db.database
       self.port = db.port
       self.db = db.db
-    end,
-    connect = function(self)
-      MsgC(Color(0, 255, 0), 'ezSQLoo connecting to database\n')
-      local start = SysTime()
-      self.db:connect()
-      self.db:wait()
-      return MsgC(Color(155, 155, 155), 'ezSQLoo connect operation complete. took: ' .. (SysTime() - start) .. ' seconds\n')
     end,
     escape = function(self, str)
       return self.db:escape(str)
@@ -149,9 +180,9 @@ do
         if self.db:status() == mysqloo.DATABASE_NOT_CONNECTED then
           self:connect()
         end
-        dprint('QUERY FAILED!')
-        dprint('SQL: ' .. sqlstr)
-        dprint('ERR: ' .. err)
+        ErrorNoHalt('QUERY FAILED!')
+        print('SQL: ' .. sqlstr)
+        print('ERR: ' .. err)
         if callback then
           return callback(nil, err)
         end
@@ -176,7 +207,6 @@ do
         count = count + 1
         return args[count]
       end)
-      print(sqlstr)
       return self:_query(sqlstr, cback)
     end,
     query_sync = function(self, sqlstr, ...)
@@ -200,13 +230,22 @@ do
   }
   _base_0.__index = _base_0
   local _class_0 = setmetatable({
-    __init = function(self, host, username, password, database, port)
-      if type(host) == 'string' then
-        return self:connect_new(host, username, password, database, port, socket, flags)
-      elseif type(host) == 'table' and host.db and tostring(host.db):find('Database') then
-        return self:connect_resume(host)
-      else
-        return error('could not initialize database object')
+    __init = function(self, options, ...)
+      local host, user, pass, db, port = options, ...
+      if type(host) == 'string' and user then
+        return self:connect_new({
+          host = host,
+          user = user,
+          pass = pass,
+          db = db,
+          port = port
+        })
+      elseif type(options) == 'table' then
+        if options.__class and options.__class == self.__class then
+          return self:connect_shared(options)
+        else
+          return self:connect_new(options)
+        end
       end
     end,
     __base = _base_0,
