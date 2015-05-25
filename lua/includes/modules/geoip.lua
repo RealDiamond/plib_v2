@@ -27,7 +27,7 @@ function geoip.Get(ip, cback)
 			end
 		end, function()
 			if (failures <= 5) then 
-				failures = failures + a
+				failures = failures + 1
 				geoip.Get(ip, cback)
 			end
 		end)
