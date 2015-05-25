@@ -8,8 +8,8 @@ local error 		= p.error
 local http_fetch 	= http.Fetch
 local json_to_table = util.JSONToTable
 
-local failures		 = 5
-local result_cache 	= {}
+local failures		 = 0
+local result_cache	 = {}
 
 
 function geoip.Get(ip, cback)
