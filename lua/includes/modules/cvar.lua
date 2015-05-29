@@ -6,12 +6,9 @@ local pon 			= pon
 
 cvar 				= {}
 local cvar_file 	= 'plib_cvars.txt'
-local stored_vars 	= pcall(pon.decode, file.Read(cvar_file, 'DATA')) or {}
+local suc, ret 		= pcall(pon.decode, file.Read(cvar_file, 'DATA'))
+local stored_vars 	= suc and ret or {}
 
-
-local function SaveCVars()
-	file.Write(cvar_file, pon.encode(stored_vars))
-end
 
 function cvar.Create(name, default_value, callback) -- This is optional
 	stored_vars[name] = stored_vars[name] or default_value
@@ -27,7 +24,7 @@ end
 function cvar.Set(name, value)
 	stored_vars[name] = value
 	hook.Call('cvar.' ..  name, nil, value)
-	SaveCVars()
+	file.Write(cvar_file, pon.encode(stored_vars))
 end
 
 function cvar.Get(name)
