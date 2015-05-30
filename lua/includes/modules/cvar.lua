@@ -9,9 +9,10 @@ local cvar_file 	= 'plib_cvars.txt'
 local suc, ret 		= pcall(pon.decode, file.Read(cvar_file, 'DATA'))
 local stored_vars 	= suc and ret or {}
 
-
 function cvar.Create(name, default_value, callback) -- This is optional
-	stored_vars[name] = stored_vars[name] or default_value
+	if (stored_vars[name] == nil) then
+		stored_vars[name] =  default_value
+	end
 	if callback then
 		cvar.AddCallback(name, callback)
 	end
