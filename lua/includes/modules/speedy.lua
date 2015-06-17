@@ -33,9 +33,9 @@ do
 	local Font 			= 'TargetID'
 	local SizeCache 	= {}
 
-	function surface.SetFont(font, ...)
+	function surface.SetFont(font)
 		Font = font
-		return SetFont(font, ...)
+		return SetFont(font)
 	end
 	 
 	function surface.GetTextSize(text)
