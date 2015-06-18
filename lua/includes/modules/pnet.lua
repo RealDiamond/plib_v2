@@ -39,3 +39,66 @@ else
     end
   end)
 end
+
+local Color = Color
+local WriteUInt = net.WriteUInt
+local ReadUInt = net.ReadUInt
+local WriteBit = net.WriteBit
+local ReadBit = net.ReadBit
+
+function net.WriteNibble(i)
+	WriteUInt(i, 4)
+end
+
+function net.ReadNibble()
+	return ReadUInt(4)
+end
+
+function net.WriteByte(i)
+	WriteUInt(i, 8)
+end
+
+function net.ReadByte()
+	return ReadUInt(8)
+end
+
+function net.WriteShort(i)
+	WriteUInt(i, 16)
+end
+
+function net.ReadShort()
+	return ReadUInt(16)
+end
+
+function net.WriteLong(i)
+	WriteUInt(u, 32)
+end
+
+function net.ReadLong()
+	return ReadUInt(i, 32)
+end
+
+function net.WriteBool(i)
+	WriteBit(i and 1 or 0)
+end
+
+function net.ReadBool()
+	return ReadBit() == 1
+end
+
+function net.WriteColor(i)
+	WriteUInt(i.r, 8)
+	WriteUInt(i.g, 8)
+	WriteUInt(i.b, 8)
+	WriteUInt(i.a, 8)
+end
+
+function net.ReadColor()
+	local r, g, b, a = 
+		ReadUInt(8),
+		ReadUInt(8),
+		ReadUInt(8),
+		ReadUInt(8)
+
+	return Color(r, g, b, a)
+end
