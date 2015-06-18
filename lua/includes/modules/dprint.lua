@@ -38,13 +38,6 @@ function dprint(...)
 	print( '  ', ... )
 end
 
-local last;
-function dbench_start()
-	last = os.clock();
-end
-function dbench_print()
-	print('[benchmark] '..(os.clock()-last));
-end
 
 function fdebug(name)
 	local col = Color(math.random(1,255), math.random(1,255), math.random(1, 255));
