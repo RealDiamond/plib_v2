@@ -40,7 +40,6 @@ else
   end)
 end
 
-local Color = Color
 local WriteUInt = net.WriteUInt
 local ReadUInt = net.ReadUInt
 local WriteBit = net.WriteBit
@@ -84,21 +83,4 @@ end
 
 function net.ReadBool()
 	return ReadBit() == 1
-end
-
-function net.WriteColor(i)
-	WriteUInt(i.r, 8)
-	WriteUInt(i.g, 8)
-	WriteUInt(i.b, 8)
-	WriteUInt(i.a, 8)
-end
-
-function net.ReadColor()
-	local r, g, b, a = 
-		ReadUInt(8),
-		ReadUInt(8),
-		ReadUInt(8),
-		ReadUInt(8)
-
-	return Color(r, g, b, a)
 end
