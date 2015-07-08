@@ -1,7 +1,7 @@
-nw 				= nw 			or {}
-nw.Stored 		= nw.Stored 	or {}
-nw.VarInfo		= nw.VarInfo 	or {}
-nw.Callbacks 	= nw.Callbacks 	or {}
+nw 				= {}
+local Stored 	= {}
+local VarInfo	= {}
+local Callbacks = {}
 
 local nw 		= nw
 local net 		= net
@@ -19,8 +19,8 @@ if (SERVER) then
 	util.AddNetworkString('nw.ping')
 
 	local function SendVar(ent, var, value, filter)
-		if (nw.VarInfo[var] ~= nil) and (nw.VarInfo[var].Write ~= nil) then
-			nw.VarInfo[var].Write(ent, value, filter)
+		if (VarInfo[var] ~= nil) and (VarInfo[var].Write ~= nil) then
+			VarInfo[var].Write(ent, value, filter)
 		else
 			local index = ent:EntIndex()
 			
@@ -37,11 +37,11 @@ if (SERVER) then
 	function ENTITY:SetNetVar(var, value)
 		local index = self:EntIndex()
 		
-		if (nw.Stored[index] == nil) then
-			nw.Stored[index] = {}
+		if (Stored[index] == nil) then
+			Stored[index] = {}
 		end
 
-		nw.Stored[index][var] = value
+		Stored[index][var] = value
 
 		SendVar(self, var, value)
 	end
@@ -52,21 +52,21 @@ if (SERVER) then
 
 			pl.EntityCreated = true
 
-			for index, vars in pairs(nw.Stored) do
+			for index, vars in pairs(Stored) do
 				local ent = Entity(index)
 				for var, value in pairs(vars) do
-					if not nw.VarInfo[var] or not nw.VarInfo[var].LocalVar then
+					if not VarInfo[var] or not VarInfo[var].LocalVar then
 						SendVar(Entity(index), var, value, pl)
 					end
 				end
 			end
 
-			if (nw.Callbacks[pl] ~= nil) then
-				for k, v in ipairs(nw.Callbacks[pl]) do
+			if (Callbacks[pl] ~= nil) then
+				for k, v in ipairs(Callbacks[pl]) do
 					v(pl)
 				end
 			end
-			nw.Callbacks[pl] = nil
+			Callbacks[pl] = nil
 		end
 	end)
 
@@ -74,10 +74,10 @@ if (SERVER) then
 		if (pl.EntityCreated == true) then
 			callback(pl)
 		else
-			if (nw.Callbacks[pl] == nil) then
-				nw.Callbacks[pl] = {}
+			if (Callbacks[pl] == nil) then
+				Callbacks[pl] = {}
 			end
-			nw.Callbacks[pl][#nw.Callbacks[pl] + 1] = callback
+			Callbacks[pl][#Callbacks[pl] + 1] = callback
 		end
 	end
 
@@ -87,11 +87,11 @@ if (SERVER) then
 
 	hook.Add('EntityRemoved', 'nw.EntityRemoved', function(ent)
 		local index = ent:EntIndex()
-		if (nw.Stored[index] ~= nil) then
+		if (Stored[index] ~= nil) then
 			net.Start('nw.clear')
 				net.WriteUInt(index, 12)
 			net.Broadcast()
-			nw.Stored[index] = nil
+			Stored[index] = nil
 		end
 	end)
 else
@@ -105,21 +105,21 @@ else
 		local var 	= net.ReadString()
 		local value = ReadType()
 
-		if (nw.Stored[index] == nil) then
-			nw.Stored[index] = {}
+		if (Stored[index] == nil) then
+			Stored[index] = {}
 		end
 
-		nw.Stored[index][var] = value
+		Stored[index][var] = value
 	end)
 
 	net.Receive('nw.clear', function()
-		nw.Stored[net.ReadUInt(12)] = nil
+		Stored[net.ReadUInt(12)] = nil
 	end)
 
 	net.Receive('nw.delete', function()
 		local index = net.ReadUInt(12)
-		if (nw.Stored[index] ~= nil) then
-			nw.Stored[index][net.ReadString()] = nil
+		if (Stored[index] ~= nil) then
+			Stored[index][net.ReadString()] = nil
 		end
 	end)
 
@@ -131,8 +131,8 @@ end
 
 function ENTITY:GetNetVar(var)
 	local index = self:EntIndex()
-	if (nw.Stored[index] ~= nil) then
-		return nw.Stored[index][var]
+	if (Stored[index] ~= nil) then
+		return Stored[index][var]
 	end
 end
 
@@ -151,18 +151,18 @@ function nw.Register(var, info) -- always call this shared
 			local value = ReadFunc()
 			local index = info.LocalVar and LocalPlayer():EntIndex() or net.ReadUInt(12)
 
-			if (nw.Stored[index] == nil) then
-				nw.Stored[index] = {}
+			if (Stored[index] == nil) then
+				Stored[index] = {}
 			end
 
-			nw.Stored[index][var] = value
+			Stored[index][var] = value
 		end)
 	end
 
 	local WriteFunc = (info.Write or net.WriteType)
 	local FilterFunc = (info.Filter or player.GetAll)
 
-	nw.VarInfo[var] = {
+	VarInfo[var] = {
 		Write = function(ent, value, filter)
 			local index = ent:EntIndex()
 

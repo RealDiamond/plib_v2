@@ -1,52 +1,3 @@
-p = {}
-
-local color_white 	= Color(225,225,225)
-local color_red 	= Color(225,5,5)
-
-p.print = function(...)
-	if istable(...) then
-		p.PrintTable(...)
-	else
-		local args = {...}
-		MsgC(Color(175,0,255), '[pLib] ')
-		if IsColor(args[1]) then
-			MsgC(...)
-		else
-			MsgC(color_white, ...)
-		end
-		MsgC('\n')
-	end
-end
-
-p.error = function(msg)
-	Msg('\n\n')
-	p.print(color_red, '[ERROR]: ', color_white, msg)
-	local level = 1
-	while (true) do
-		local info = debug.getinfo(level, 'Sln')
-		if (info == nil) then break end
-		if (info.what == 'C') then
-			MsgC(color_red,'       [' .. level .. ']     ', color_white, '[C] function\n')
-		else
-			MsgC(color_red,'       [' .. level .. ']     ', color_white, 'Line: ' .. info.currentline .. '     ' .. (info.name or 'Unknown') .. '     ' .. info.short_src .. '\n')
-		end
-		level = level + 1
-	end
-	Msg('\n\n')
-end
-
-p.include_sv = (SERVER) and include or function() end
-p.include_cl = (SERVER) and AddCSLuaFile or include
-p.include_sh = function(p) p.include_sv(p) p.include_cl(p) end
-p.include = p.include_sh
-
-function p.require(n)
-	local succ, err = pcall(require, n)
-	if not succ then
-		return p.error('Failed to load module: ' .. n)
-	end
-end
-
 -- PrintTable
 -- Modified from https://github.com/meepdarknessmeep/gmodutil
 local function GetTextSize(x)
@@ -139,7 +90,7 @@ local function DebugFixToString(obj, iscom)
 	return ret
 end
 
-function p.PrintTable(tbl, spaces, done)
+function plib.PrintTable(tbl, spaces, done)
 	local buffer = {}
 	local rbuf = {}
 	local maxwidth = 0
@@ -180,4 +131,4 @@ function p.PrintTable(tbl, spaces, done)
 		MsgN''
 	end
 end
-PrintTable = p.PrintTable
+PrintTable = plib.PrintTable

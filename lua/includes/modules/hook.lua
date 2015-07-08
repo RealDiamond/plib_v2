@@ -1,3 +1,5 @@
+-- Optimize the hook lib and include our loader before stuff loads.
+
 hook 				= {}
 
 local hook 			= hook
@@ -36,6 +38,7 @@ hook.Call = function(name, gm, ...)
 end
 
 local hook_Call = hook.Call
+local GAMEMODE 	= GAMEMODE
 hook.Run = function(name, ...)
 	return hook_Call(name, GAMEMODE, ...)
 end
@@ -88,3 +91,9 @@ hook.Add = function(name, id, func)
 	collection[#collection+1] = func
 	mapping[id] = func
 end
+
+if (SERVER) then
+	AddCSLuaFile()
+	AddCSLuaFile('plib/plib_init.lua')
+end
+include('plib/plib_init.lua')

@@ -1,10 +1,6 @@
--- I'll expand this.. some day
-require('plib')
-
 geoip 				= {}
 
 local geoip 		= geoip
-local error 		= p.error
 local http_fetch 	= http.Fetch
 local json_to_table = util.JSONToTable
 
