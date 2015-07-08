@@ -1,5 +1,2 @@
 # plib_v2
-collection of libraries created by thelastpenguin
-
-contributions by aStonedPenguin
-
+A collection random libraries and utilities created by thelastpenguin and aStonedPenguin
