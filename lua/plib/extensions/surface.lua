@@ -1,63 +1,13 @@
-local draw 		= draw
-local surface 	= surface
-local render 	= render
-
-local surface_SetDrawColor = surface.SetDrawColor
-local surface_DrawRect = surface.DrawRect
-
-function surface.DrawBoldOutlinedRect(x, y, w, h, t)
-	if not t then t = 1 end
-	surface_DrawRect(x, y, w, t)
-	surface_DrawRect(x, y + (h - t), w, t)
-	surface_DrawRect(x, y, t, h)
-	surface_DrawRect(x + (w - t), y, t, h)
-end
-
-local surface_DrawRectBold = surface.DrawBoldOutlinedRect
-
-function draw.Box(x, y, w, h, col)
-	surface_SetDrawColor(col)
-	surface_DrawRect(x, y, w, h)
-end
-
-function draw.Outline(x, y, w, h, col, thickness)
-	surface_SetDrawColor(col)
-	surface_DrawRectBold(x, y, w, h, thickness)
-end
-
-function draw.OutlinedBox(x, y, w, h, col, bordercol, thickness)
-	surface_SetDrawColor(col)
-	surface_DrawRect(x + 1, y + 1, w - 2, h - 2)
-
-	surface_SetDrawColor(bordercol)
-	surface_DrawRectBold(x, y, w, h, thickness)
-end
-
-local blur = Material('pp/blurscreen')
-function draw.Blur(panel, amount) -- Thanks nutscript
-	local x, y = panel:LocalToScreen(0, 0)
-	local scrW, scrH = ScrW(), ScrH()
-	surface.SetDrawColor(255, 255, 255)
-	surface.SetMaterial(blur)
-	for i = 1, 3 do
-		blur:SetFloat('$blur', (i / 3) * (amount or 6))
-		blur:Recompute()
-		render.UpdateScreenEffectTexture()
-		surface.DrawTexturedRect(x * -1, y * -1, scrW, scrH)
-	end
-end
-
-
 do
-	local q = {{},{},{},{}};
+	local q = {{},{},{},{}}
 	local q1, q2, q3, q4 = q[1], q[2], q[3], q[4]
 	local drawpoly = surface.DrawPoly
 	function surface.DrawQuad( x1, y1, x2, y2, x3, y3, x4, y4 )
-		q1.x, q1.y = x1, y1;
-		q2.x, q2.y = x2, y2;
-		q3.x, q3.y = x3, y3;
-		q4.x, q4.y = x4, y4;
-		drawpoly(q);
+		q1.x, q1.y = x1, y1
+		q2.x, q2.y = x2, y2
+		q3.x, q3.y = x3, y3
+		q4.x, q4.y = x4, y4
+		drawpoly(q)
 	end
 
 	local quv = {{},{},{},{}}
@@ -113,27 +63,27 @@ do
 end
 
 do
-	local cos, sin = math.cos, math.sin ;
+	local cos, sin = math.cos, math.sin 
 	local ang2rad = 3.141592653589/180
-	local drawquad = surface.DrawQuad ;
+	local drawquad = surface.DrawQuad 
 	function surface.DrawArc( _x, _y, r1, r2, aStart, aFinish, steps )
-		aStart, aFinish = aStart*ang2rad, aFinish*ang2rad ;
-		local step = (( aFinish - aStart ) / steps);
-		local c = steps;
+		aStart, aFinish = aStart*ang2rad, aFinish*ang2rad 
+		local step = (( aFinish - aStart ) / steps)
+		local c = steps
 		
-		local a, c1, s1, c2, s2 ;
+		local a, c1, s1, c2, s2 
 		
-		c2, s2 = cos(aStart), sin(aStart);
+		c2, s2 = cos(aStart), sin(aStart)
 		for _a = 0, steps - 1 do
-			a = _a*step + aStart;
-			c1, s1 = c2, s2;
-			c2, s2 = cos(a+step), sin(a+step);
+			a = _a*step + aStart
+			c1, s1 = c2, s2
+			c2, s2 = cos(a+step), sin(a+step)
 			
 			drawquad( _x+c1*r1, _y+s1*r1, 
 						 _x+c1*r2, _y+s1*r2, 
 						 _x+c2*r2, _y+s2*r2,
-						 _x+c2*r1, _y+s2*r1 );
-			c = c - 1;
+						 _x+c2*r1, _y+s2*r1 )
+			c = c - 1
 			if c < 0 then break end
 		end
 	end
@@ -142,32 +92,32 @@ end
 -- Begin the moonshit
 -- DRAW QUAD
 do
-	local cos, sin = math.cos, math.sin ;
+	local cos, sin = math.cos, math.sin 
 	local ang2rad = 3.141592653589/180
-	local drawline = surface.DrawLine ;
+	local drawline = surface.DrawLine 
 	function surface.DrawArcOutline( _x, _y, r1, r2, aStart, aFinish, steps )
-		aStart, aFinish = aStart*ang2rad, aFinish*ang2rad ;
-		local step = (( aFinish - aStart ) / steps);
-		local c = steps;
+		aStart, aFinish = aStart*ang2rad, aFinish*ang2rad 
+		local step = (( aFinish - aStart ) / steps)
+		local c = steps
 		
-		local a, c1, s1, c2, s2 ;
+		local a, c1, s1, c2, s2 
 		
-		c2, s2 = cos(aStart), sin(aStart);
-		drawline( _x+c2*r1, _y+s2*r1, _x+c2*r2, _y+s2*r2 );
+		c2, s2 = cos(aStart), sin(aStart)
+		drawline( _x+c2*r1, _y+s2*r1, _x+c2*r2, _y+s2*r2 )
 		for _a = 0, steps - 1 do
-			a = _a*step + aStart;
-			c1, s1 = c2, s2;
-			c2, s2 = cos(a+step), sin(a+step);
+			a = _a*step + aStart
+			c1, s1 = c2, s2
+			c2, s2 = cos(a+step), sin(a+step)
 			
 			
 			drawline( _x+c1*r2, _y+s1*r2, 
-												_x+c2*r2, _y+s2*r2 );
+												_x+c2*r2, _y+s2*r2 )
 			drawline( _x+c1*r1, _y+s1*r1,
-												_x+c2*r1, _y+s2*r1 );
-			c = c - 1;
+												_x+c2*r1, _y+s2*r1 )
+			c = c - 1
 			if c < 0 then break end
 		end
-		drawline( _x+c2*r1, _y+s2*r1, _x+c2*r2, _y+s2*r2 );
+		drawline( _x+c2*r1, _y+s2*r1, _x+c2*r2, _y+s2*r2 )
 	end
 end
 
