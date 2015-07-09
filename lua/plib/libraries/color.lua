@@ -31,10 +31,10 @@ function color.DecodeRGB(num)
 	return Color(bit_band(bit_rshift(num, 16), 0xFF), bit_band(bit_rshift(num, 8), 0xFF), bit_band(num, 0xFF))
 end
 
-function color.EncodeARGB(col)
+function color.EncodeRGBA(col)
 	return ((col.a * 0x100 + col.r) * 0x100 + col.g) * 0x100 + col.b
 end
 
-function color.DecodeARGB(num)
+function color.DecodeRGBA(num)
 	return Color(bit_band(rshift(num, 16), 0xFF), bit_band(rshift(num, 8), 0xFF), bit_band(num, 0xFF), bit_band(rshift(num, 24), 0xFF))
 end
