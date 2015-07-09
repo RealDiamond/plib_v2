@@ -45,3 +45,4 @@ function draw.Blur(panel, amount) -- Thanks nutscript
 		surface_DrawTexturedRect(x * -1, y * -1, scrW, scrH)
 	end
 end
+

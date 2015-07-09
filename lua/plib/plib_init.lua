@@ -1,12 +1,13 @@
-plib 			= {}
+plib = {}
+_R 	 = debug.getregistry()
 
+-- To do, add IncludeDir, IncudeDirSV, IncudeDirSH, IncudeDirCL
 plib.IncludeSV 	= (SERVER) and include or function() end
 plib.IncludeCL 	= (SERVER) and AddCSLuaFile or include
 plib.IncludeSH 	= function(f) plib.IncludeSV(f) plib.IncludeCL(f) end
 
 local color_white 	= Color(225,225,225)
 local color_red 	= Color(225,5,5)
-
 function plib.Error(msg)
 	Msg('\n\n')
 	MsgC(color_red, '[ERROR]: ', color_white, msg .. '\n')
@@ -25,32 +26,35 @@ function plib.Error(msg)
 end
 
 -- Module loader
-local function LoadDir(dir)
+function plib.LoadDir(dir)
 	local ret = {}
 	local files, folders = file.Find('plib/' .. dir .. '/*', 'LUA')
 	for _, f in ipairs(files) do
-		ret[f:sub(1, f:len() - 4)] = 'plib/' .. dir .. '/' .. f
+		if (f:sub(f:len() - 2, f:len()) == 'lua') then
+			ret[f:sub(1, f:len() - 4)] = 'plib/' .. dir .. '/' .. f
+		end
 	end
 	for _, f in ipairs(folders) do
-		ret[f] = 'plib/' .. dir  .. '/' .. f .. '/' .. f ..'.lua'
+		if (f ~= 'client') and (f ~= 'server') then
+			ret[f] = 'plib/' .. dir  .. '/' .. f .. '/' .. f ..'.lua'
+		end
 	end
 	return ret
 end
 
-local Modules = LoadDir('libraries')
+local Modules = plib.LoadDir('libraries')
 if (SERVER) then
 	for k, v in pairs(Modules) do
 		AddCSLuaFile(v)
 	end
 end
-for k, v in pairs(LoadDir('extensions')) do
-	plib.IncludeSH(v)
-end
 
 function plib.Require(name)
-	if Modules[name] then
-		include(Modules[name])
-	else
+	local lib = Modules[name]
+	if (lib ~= nil) and (lib ~= true) then
+		include(lib)
+		Modules[name] = true
+	elseif (lib == nil) then
 		plib.Error('Module "' .. name .. '" not found!')
 	end
 end
@@ -58,7 +62,7 @@ end
 local _require = require
 function require(name)
 	if Modules[name] then
-		plib.IncludeSH(Modules[name])
+		plib.Require(name)
 	else
 		return _require(name)
 	end

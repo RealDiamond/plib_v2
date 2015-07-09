@@ -91,9 +91,3 @@ hook.Add = function(name, id, func)
 	collection[#collection+1] = func
 	mapping[id] = func
 end
-
-if (SERVER) then
-	AddCSLuaFile()
-	AddCSLuaFile('plib/plib_init.lua')
-end
-include('plib/plib_init.lua')
