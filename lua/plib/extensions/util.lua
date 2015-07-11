@@ -115,7 +115,7 @@ function plib.PrintTable(tbl, spaces, done)
 		MsgC(unpack((DebugFixToStringColored(key))))
 		MsgC(typecol.etc, '] '..FixTabs(buffer[i], maxwidth), typecol.etc, '= ')
 		if(type(value) == 'table' and not IsColor(value) and not done[value]) then
-			p.PrintTable(tbl[key], spaces + 4, done)
+			plib.PrintTable(tbl[key], spaces + 4, done)
 		else
 			local args, osc = DebugFixToStringColored(value, true)
 			overridesc = osc
