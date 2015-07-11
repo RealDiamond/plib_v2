@@ -55,7 +55,7 @@ if (SERVER) then
 			for index, vars in pairs(Stored) do
 				local ent = Entity(index)
 				for var, value in pairs(vars) do
-					if not VarInfo[var] or (not VarInfo[var].LocalVar or ent == pl) then
+					if not VarInfo[var] or (not VarInfo[var].LocalVar) or (ent == pl) then
 						SendVar(Entity(index), var, value, pl)
 					end
 				end
