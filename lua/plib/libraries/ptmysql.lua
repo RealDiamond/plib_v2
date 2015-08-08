@@ -36,8 +36,8 @@ function ptmysql.connect( hostname, username, password, database, port, optional
   obj.hash            = string.format( '%s:%s@%X:%s', hostname, port, util.CRC( username .. '-' .. password ), database );
 
   if db_cache[ obj.hash ] then
-    ptmysql.log( 'Recycled database connection : ' .. obj.database .. '-' .. obj.port );
-    return db_cache[ obj.hash ]._db
+    ptmysql.log( 'Recycled database connection : ' .. database .. '-' .. port );
+    return db_cache[ obj.hash ]
   end
 
   obj._db, obj.err   = tmysql.initialize( hostname, username, password, database, port, optional_unix_socket_path );
