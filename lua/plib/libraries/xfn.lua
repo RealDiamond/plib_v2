@@ -102,7 +102,8 @@ function xfn.fn_const(val)
 end
 
 -- stack manipulation to the higest degree
-function xfn.bind(func, ...)
+
+function xfn.storeArgs(...)
 	local function storeArgs(i, a, ...)
 		if i == 0 then return end
 
@@ -121,9 +122,16 @@ function xfn.bind(func, ...)
 		end
 	end
 
-	local _1 = storeArgs(select('#', ...), ...)
+	local c = select('#', ...)
+	if c == 0 then return function() end end
+
+	return storeArgs(c, ...)
+end
+
+function xfn.bind(func, ...)
+	local _1 = xfn.storeArgs(...)
 	return function(...)
-		local _2 = storeArgs(select('#', ...), ...)
+		local _2 = xfn.storeArgs(...)
 		return func(_1(_2))
 	end
 end
