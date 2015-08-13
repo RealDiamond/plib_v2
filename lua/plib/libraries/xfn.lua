@@ -8,22 +8,17 @@ xfn = {};
 local xfn = xfn;
 local pairs , ipairs , unpack = pairs , ipairs , unpack ;
 
-function xfn.filter( tbl, func )
-	local ir, iw = 1, 1;
-	local v ;
-	while( tbl[ir] )do
-		v = tbl[ir];
-		if( func( v ) )then
-			tbl[iw] = v;
-			iw = iw + 1;
+function xfn.filter(tab, func)
+	local c = 0
+	for i = 1, #tab do
+		if func(v) then
+			c = c + 1
+			tab[c] = v
+		else
+			tab[i] = nil
 		end
-		ir = ir + 1;
 	end
-	while( iw < ir )do
-		tbl[iw] = nil;
-		iw = iw + 1;
-	end
-	return tbl;
+	return tab
 end
 
 function xfn.filterStack(...)
