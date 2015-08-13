@@ -106,24 +106,29 @@ function xfn.fn_const(val)
 	end
 end
 
-// function manipulation
-function xfn.fn_partial(fn, ... )
-	local args = {...};
-	return function(...)
-		local inject = {...};
-		local toInject = #inject
-		local params = {};
-		for k,v in pairs(args)do
-			params[k] = v;
-		end
-		local a, b = 1, 1;
-		while( b <= toInject )do
-			if params[a] == nil then
-				params[a] = inject[b];
-				b = b + 1;
+-- stack manipulation to the higest degree
+function xfn.bind(func, ...)
+	local function storeArgs(i, a, ...)
+		if i == 0 then return end
+
+		local next = storeArgs(i - 1, ...)
+		if next then
+			return function(after)
+				return a, next(after)
 			end
-			a = a + 1;
+		else
+			return function(after)
+				if after then
+					return a, after()
+				end
+				return a
+			end
 		end
-		fn(unpack(params));
+	end
+
+	local _1 = storeArgs(select('#', ...), ...)
+	return function(...)
+		local _2 = storeArgs(select('#', ...), ...)
+		return func(_1(_2))
 	end
 end
