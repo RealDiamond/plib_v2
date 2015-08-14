@@ -9,16 +9,17 @@ local xfn = xfn;
 local pairs , ipairs , unpack = pairs , ipairs , unpack ;
 
 function xfn.filter(tab, func)
-	local c = 0
-	for i = 1, #tab do
-		if func(v) then
-			c = c + 1
-			tab[c] = v
-		else
-			tab[i] = nil
-		end
-	end
-	return tab
+  local c = 1
+  for k, v in ipairs(tab) do
+    if func(v) then
+      tab[c] = v
+      c = c + 1
+    end
+  end
+  for i = c + 1, #tab do
+    tab[i] = nil
+  end
+  return tab
 end
 
 function xfn.filterStack(...)
