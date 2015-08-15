@@ -12,11 +12,12 @@ function xfn.filter(tab, func)
 	local c = 1
 	for i = 1, #tab do
 		if func(tab[i]) then
-  			tab[c] = tab[i]
-  			c = c + 1
-  		else
-  			tab[i] = nil
-  		end
+			tab[c] = tab[i]
+			c = c + 1
+		end
+	end
+	for i = c, #tab do
+		tab[i] = nil
 	end
 	return tab
 end
