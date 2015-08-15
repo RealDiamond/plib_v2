@@ -134,6 +134,7 @@ end
 if (SERVER) then
 	util.AddNetworkString('nw.PlayerSync')
 	util.AddNetworkString('nw.NullVar')
+	util.AddNetworkString('nw.EntityRemoved')
 
 	net.Receive('nw.PlayerSync', function(len, pl)
 		if (pl.EntityCreated ~= true) then
@@ -159,7 +160,7 @@ if (SERVER) then
 	hook.Add('EntityRemoved', 'nw.EntityRemoved', function(ent)
 		local index = ent:EntIndex()
 		if (index ~= 0) and (data[index] ~= nil) then -- For some reason this kept getting called on Entity(0), not sure why...
-			net.Start('nw.NullVar')
+			net.Start('nw.EntityRemoved')
 				net.WriteUInt(index, 12)
 			net.Broadcast()
 			data[index] = nil
@@ -215,5 +216,9 @@ else
 
 	net.Receive('nw.NullVar', function()
 		data[net.ReadUInt(12)][net.ReadString()] = nil
+	end)
+	
+	net.Receive('nw.EntityRemoved', function()
+		data[net.ReadUInt(12)] = nil
 	end)
 end
