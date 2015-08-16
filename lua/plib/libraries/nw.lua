@@ -1,6 +1,7 @@
 nw 				= {}
 
 local vars 		= {}
+local mappings 	= {}
 local data 		= {
 	[0] = {}
 }
@@ -10,6 +11,17 @@ local callbacks = {}
 local nw_mt 	= {}
 nw_mt.__index 	= nw_mt
 
+local bitmap = {
+	[3]		= 3,
+	[7] 	= 4,
+	[15] 	= 5,
+	[31] 	= 6,
+	[63] 	= 7,
+	[127] 	= 8
+}
+
+local bitcount 	= 2
+
 local ENTITY 	= FindMetaTable('Entity')
 
 local net 		= net
@@ -17,7 +29,7 @@ local pairs 	= pairs
 local ipairs 	= ipairs
 local Entity 	= Entity
 
-function nw.Register(var, info)
+function nw.Register(var, info) -- You must always call this on both the client and server. It will serioulsy break shit if you don't.
 	local t = {
 		Name = var,
 		NetworkString = 'nw_' .. var,
@@ -54,7 +66,7 @@ function nw.Register(var, info)
 		if info.Filter then t:Filter(info.Filter) end
 	end
 
-	return t
+	return t:_Construct()
 end
 
 function nw_mt:Write(func, opt)
@@ -119,6 +131,16 @@ function nw_mt:_Construct()
 		end
 	end
 
+	mappings = {}
+	for k, v in SortedPairsByMemberValue(vars, 'Name', false) do
+		local c = #mappings + 1
+		vars[k].ID = c
+		mappings[c] = v
+		if bitmap[c] then
+			bitcount = bitmap[c]
+		end
+	end
+
 	return self
 end
 
@@ -144,7 +166,10 @@ if (SERVER) then
 
 			for index, _vars in pairs(data) do
 				for var, value in pairs(_vars) do
-					vars[var]:_Send(Entity(index), value, pl)
+					local ent = Entity(index)
+					if (not vars[var].LocalVar) or (ent == pl) then
+						vars[var]:_Send(ent, value, pl)
+					end
 				end
 			end
 
@@ -185,7 +210,7 @@ if (SERVER) then
 		else
 			net.Start('nw.NullVar')
 				net.WriteUInt(0, 12)
-				net.WriteString(var)
+				net.WriteUInt(vars[var].ID, bitcount)
 			vars[var]:SendFunc(0, value)
 		end
 	end
@@ -204,7 +229,7 @@ if (SERVER) then
 		else
 			net.Start('nw.NullVar')
 				net.WriteUInt(index, 12)
-				net.WriteString(var)
+				net.WriteUInt(vars[var].ID, bitcount)
 			vars[var]:SendFunc(self, value)
 		end
 	end
@@ -215,7 +240,7 @@ else
 	end)
 
 	net.Receive('nw.NullVar', function()
-		data[net.ReadUInt(12)][net.ReadString()] = nil
+		data[net.ReadUInt(12)][mappings[net.ReadUInt(bitcount)].Name] = nil
 	end)
 	
 	net.Receive('nw.EntityRemoved', function()
