@@ -11,7 +11,7 @@ local callbacks = {}
 local nw_mt 	= {}
 nw_mt.__index 	= nw_mt
 
-local bitmap = {
+local bitmap 	= {
 	[3]		= 3,
 	[7] 	= 4,
 	[15] 	= 5,
@@ -33,13 +33,8 @@ function nw.Register(var, info) -- You must always call this on both the client 
 	local t = {
 		Name = var,
 		NetworkString = 'nw_' .. var,
-		_Write = function(self, ent, value)
-			net.WriteUInt(ent:EntIndex(), 12)
-			net.WriteType(value)
-		end,
-		_Read = function(self)
-			return net.ReadUInt(12), net.ReadType()
-		end,
+		WriteFunc = net.WriteType,
+		ReadFunc = net.ReadType,
 		SendFunc = net.Broadcast,
 	}
 	setmetatable(t, nw_mt)
@@ -50,10 +45,11 @@ function nw.Register(var, info) -- You must always call this on both the client 
 	else
 		net.Receive(t.NetworkString, function()
 			local index, value = t:_Read()
-				
+
 			if (not data[index]) then
 				data[index] = {}
 			end
+
 			data[index][var] = value
 		end)
 	end
@@ -128,6 +124,14 @@ function nw_mt:_Construct()
 		end
 		self._Read = function(self)
 			return 0, ReadFunc()
+		end
+	else
+		self._Write = function(self, ent, value)
+			net.WriteUInt(ent:EntIndex(), 12)
+			WriteFunc(value)
+		end
+		self._Read = function(self)
+			return net.ReadUInt(12), ReadFunc()
 		end
 	end
 
