@@ -1,3 +1,8 @@
+--
+-- hook.lua
+-- optimized by thelastpenguin aka gareth
+--
+
 hook 				= {}
 
 local hook 			= hook
