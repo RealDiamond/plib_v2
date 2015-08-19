@@ -1,5 +1,3 @@
--- Optimize the hook lib and include our loader before stuff loads.
-
 hook 				= {}
 
 local hook 			= hook
@@ -17,22 +15,18 @@ hook.GetTable = function()
 end
 
 hook.Call = function(name, gm, ...) 
-	local collection = hooks[name]
-	
 	local a, b, c, d, e
-	if collection ~= nil then
-		for k,v in ipairs(collection) do
+	if hooks[name] ~= nil then
+		for k,v in ipairs(hooks[name]) do
 			a, b, c, d, e = v(...)
 			if a ~= nil then
 				return a, b, c, d, e
 			end
 		end
 	end
-
 	if gm ~= nil then
-		local gmfunc = gm[name]
-		if gmfunc then
-			return gmfunc(gm, ...)
+		if gm[name] then
+			return gm[name](gm, ...)
 		end
 	end
 end
