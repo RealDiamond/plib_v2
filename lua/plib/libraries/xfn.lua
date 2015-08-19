@@ -136,3 +136,18 @@ function xfn.bind(func, ...)
 		return func(_1(_2))
 	end
 end
+
+function xfn.memoize(fn)
+	local tbl = setmetatable({}, {__mode = 'k'})
+	return function(a)
+		local v = tbl[a]
+		if v == nil then
+			v = fn(a)
+			tbl[a] = v
+		end
+		return v
+	end
+end
+
+-- never memorize the same function twice
+xfn.memoize(xfn.memoize)
