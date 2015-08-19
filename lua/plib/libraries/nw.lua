@@ -24,10 +24,17 @@ local bitcount 	= 2
 
 local ENTITY 	= FindMetaTable('Entity')
 
-local net 		= net
 local pairs 	= pairs
 local ipairs 	= ipairs
 local Entity 	= Entity
+
+local net_WriteUInt = net.WriteUInt
+local net_ReadUInt 	= net.ReadUInt
+local net_Start 	= net.Start
+local net_Send 		= (SERVER) and net.Send or net.SendToServer
+local net_Broadcast = net.Broadcast
+local player_GetAll = player.GetAll
+local sorted_pairs 	= SortedPairsByMemberValue
 
 function nw.Register(var, info) -- You must always call this on both the client and server. It will serioulsy break shit if you don't.
 	local t = {
@@ -35,7 +42,9 @@ function nw.Register(var, info) -- You must always call this on both the client 
 		NetworkString = 'nw_' .. var,
 		WriteFunc = net.WriteType,
 		ReadFunc = net.ReadType,
-		SendFunc = net.Broadcast,
+		SendFunc = function(self, ent, value, recipients)
+			net_Send(recipients or player_GetAll())
+		end,
 	}
 	setmetatable(t, nw_mt)
 	vars[var] = t
@@ -81,7 +90,7 @@ end
 
 function nw_mt:Filter(func)
 	self.SendFunc = function(self, ent, value, recipients)
-		net.Send(recipients or func(ent, value))
+		net_Send(recipients or func(ent, value))
 	end
 	return self:_Construct()
 end
@@ -97,7 +106,7 @@ function nw_mt:SetGlobal()
 end
 
 function nw_mt:_Send(ent, value, recipients)
-	net.Start(self.NetworkString)
+	net_Start(self.NetworkString)
 		self:_Write(ent, value)
 	self:SendFunc(ent, value, recipients)
 end
@@ -107,8 +116,6 @@ function nw_mt:_Construct()
 	local ReadFunc 	= self.ReadFunc
 
 	if self.LocalVar then
-		local Send = net.Send
-
 		self._Write = function(self, ent, value)
 			WriteFunc(value)
 		end
@@ -116,7 +123,7 @@ function nw_mt:_Construct()
 			return LocalPlayer():EntIndex(), ReadFunc()
 		end
 		self.SendFunc = function(self, ent, value, recipients)
-			Send(ent)
+			net_Send(ent)
 		end
 	elseif self.GlobalVar then
 		self._Write = function(self, ent, value)
@@ -127,16 +134,16 @@ function nw_mt:_Construct()
 		end
 	else
 		self._Write = function(self, ent, value)
-			net.WriteUInt(ent:EntIndex(), 12)
+			net_WriteUInt(ent:EntIndex(), 12)
 			WriteFunc(value)
 		end
 		self._Read = function(self)
-			return net.ReadUInt(12), ReadFunc()
+			return net_ReadUInt(12), ReadFunc()
 		end
 	end
 
 	mappings = {}
-	for k, v in SortedPairsByMemberValue(vars, 'Name', false) do
+	for k, v in sorted_pairs(vars, 'Name', false) do
 		local c = #mappings + 1
 		vars[k].ID = c
 		mappings[c] = v
@@ -189,9 +196,9 @@ if (SERVER) then
 	hook.Add('EntityRemoved', 'nw.EntityRemoved', function(ent)
 		local index = ent:EntIndex()
 		if (index ~= 0) and (data[index] ~= nil) then -- For some reason this kept getting called on Entity(0), not sure why...
-			net.Start('nw.EntityRemoved')
-				net.WriteUInt(index, 12)
-			net.Broadcast()
+			net_Start('nw.EntityRemoved')
+				net_WriteUInt(index, 12)
+			net_Broadcast()
 			data[index] = nil
 		end
 	end)
@@ -212,9 +219,9 @@ if (SERVER) then
 		if (value ~= nil) then
 			vars[var]:_Send(0, value)
 		else
-			net.Start('nw.NullVar')
-				net.WriteUInt(0, 12)
-				net.WriteUInt(vars[var].ID, bitcount)
+			net_Start('nw.NullVar')
+				net_WriteUInt(0, 12)
+				net_WriteUInt(vars[var].ID, bitcount)
 			vars[var]:SendFunc(0, value)
 		end
 	end
@@ -231,23 +238,23 @@ if (SERVER) then
 		if (value ~= nil) then
 			vars[var]:_Send(self, value)
 		else
-			net.Start('nw.NullVar')
-				net.WriteUInt(index, 12)
-				net.WriteUInt(vars[var].ID, bitcount)
+			net_Start('nw.NullVar')
+				net_WriteUInt(index, 12)
+				net_WriteUInt(vars[var].ID, bitcount)
 			vars[var]:SendFunc(self, value)
 		end
 	end
 else
 	hook.Add('InitPostEntity', 'nw.InitPostEntity', function()
-		net.Start('nw.PlayerSync')
-		net.SendToServer()
+		net_Start('nw.PlayerSync')
+		net_Send()
 	end)
 
 	net.Receive('nw.NullVar', function()
-		data[net.ReadUInt(12)][mappings[net.ReadUInt(bitcount)].Name] = nil
+		data[net_ReadUInt(12)][mappings[net_ReadUInt(bitcount)].Name] = nil
 	end)
 	
 	net.Receive('nw.EntityRemoved', function()
-		data[net.ReadUInt(12)] = nil
+		data[net_ReadUInt(12)] = nil
 	end)
 end
