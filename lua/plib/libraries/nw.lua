@@ -251,7 +251,10 @@ else
 	end)
 
 	net.Receive('nw.NullVar', function()
-		data[net_ReadUInt(12)][mappings[net_ReadUInt(bitcount)].Name] = nil
+		local index, id = net_ReadUInt(12), net_ReadUInt(bitcount)
+		if data[index] and mappings[id] then
+			data[index][mappings[id].Name] = nil
+		end
 	end)
 	
 	net.Receive('nw.EntityRemoved', function()

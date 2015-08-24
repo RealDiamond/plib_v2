@@ -9,10 +9,17 @@ function string.Apostrophe(str)
 end
 
 function string.NumberCommas(str)
-	str = tostring(str)	
 	return str:reverse():gsub("(...)", "%1,"):gsub(",$", ""):reverse()
 end
 
 function string.AOrAn(s)
 	return string.match(s, "^h?[AaEeIiOoUu]") and "an" or "a"
+end
+
+function string.Random(chars)
+	local str = ''
+	for i = 1, (chars or 10) do
+		str = str .. string.char(math.random(97, 122))
+	end
+	return str
 end
