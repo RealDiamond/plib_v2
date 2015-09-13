@@ -1,16 +1,27 @@
+--[[---------------------------------------------------------
+	Non-Module includes
+-----------------------------------------------------------]]
+
 include ( "util.lua" )
 
 include ( "util/sql.lua" )		-- Include sql here so it's
 include( "extensions/net.lua" )
 
 --[[---------------------------------------------------------
-	Shared Modules
+	plib
 -----------------------------------------------------------]]
+
 if (SERVER) then
 	AddCSLuaFile()
 	AddCSLuaFile('plib/plib_init.lua')
 end
 include('plib/plib_init.lua')
+
+
+
+--[[---------------------------------------------------------
+	Shared Modules
+-----------------------------------------------------------]]
 
 require ( "baseclass" )
 require ( "concommand" )		-- Console Commands
@@ -34,6 +45,7 @@ require ( "http" )
 require ( "properties" )
 require ( "widget" )
 require ( "cookie" )
+require ( "utf8" )
 
 require ( "drive" )
 include ( "drive/drive_base.lua" )
@@ -119,6 +131,10 @@ if ( CLIENT ) then
 	require ( "search" )
 
 end
+
+--[[---------------------------------------------------------
+	plib
+-----------------------------------------------------------]]
 
 for k, v in pairs(plib.LoadDir('extensions/client')) do
 	plib.IncludeCL(v)
