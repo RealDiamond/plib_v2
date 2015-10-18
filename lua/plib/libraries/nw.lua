@@ -105,6 +105,11 @@ function nw_mt:SetGlobal()
 	return self:_Construct()
 end
 
+function nw_mt:SetNoSync()
+	self.NoSync = true
+	return self:_Construct()
+end
+
 function nw_mt:_Send(ent, value, recipients)
 	net_Start(self.NetworkString)
 		self:_Write(ent, value)
@@ -178,7 +183,7 @@ if (SERVER) then
 			for index, _vars in pairs(data) do
 				for var, value in pairs(_vars) do
 					local ent = Entity(index)
-					if (not vars[var].LocalVar) or (ent == pl) then
+					if (not vars[var].LocalVar and not vars[var].NoSync) or (ent == pl) then
 						vars[var]:_Send(ent, value, pl)
 					end
 				end

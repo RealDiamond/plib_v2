@@ -23,3 +23,7 @@ function string.Random(chars)
 	end
 	return str
 end
+
+function string.HtmlSafe(str)
+    return str:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
+end
