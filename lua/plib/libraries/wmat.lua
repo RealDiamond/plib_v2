@@ -1,37 +1,35 @@
-wmat = wmat or {
+wmat = {
 	Queue = {},
 	Cache = {},
 	Busy = false,
 }
 
-function wmat.Create(name, url, callback)
-	url =  string.JavascriptSafe(url)
+function wmat.Create(name, opts, callback)
 	table.insert(wmat.Queue, {
 		Name 		= name,
-		URL 		= url,
-		Callback 	= function(html_mat)
-			local id = util.CRC(url..name)
-			local w, h = ScrW(), ScrH()
-			
+		URL 		= string.JavascriptSafe(opts.URL),
+		W 			= (opts.W or 4096),
+		H 			= (opts.H or 4096),
+		Callback 	= function(html_mat, w, h)
+			local id = util.CRC(opts.URL .. name)
 			local rt = GetRenderTarget('wmat_' .. id, w, h, RT_SIZE_NO_CHANGE, 0, 0, 0, 0)
 
-			local mat = wmat.Cache[name] or CreateMaterial('wmat_' .. id, 'UnlitGeneric', {
-				['$basetexture'] = rt:GetName(),
-				['$translucent'] = 1
-			})
+			opts.MaterialData 					= opts.MaterialData 				or {}
+			opts.MaterialData['$basetexture'] 	= opts.MaterialData['$basetexture'] or rt:GetName()
+			opts.MaterialData['$translucent'] 	= opts.MaterialData['$translucent'] or 1
 
+			local mat = wmat.Cache[name] or CreateMaterial('wmat_' .. id, (opts.Shader or 'UnlitGeneric'), opts.MaterialData)
 			local oldrt = render.GetRenderTarget()
 
 			render.SetViewPort(0, 0, w, h)
 			render.SetRenderTarget(rt)
 			render.Clear(0, 0, 0, 0)
-			render.ClearDepth()
 				cam.Start2D()
 					surface.SetDrawColor(255, 255, 255, 255)
 					surface.SetMaterial(html_mat)
-					surface.DrawTexturedRect(0, 0, w, h)
+					surface.DrawTexturedRect(0, 0, 4096, 4096)
 				cam.End2D()
-			render.SetViewPort(0, 0, w, h)
+			render.SetViewPort(0, 0, ScrW(), ScrH())
 			render.SetRenderTarget(oldrt)
 
 			table.remove(wmat.Queue, 1)
@@ -57,45 +55,45 @@ end
 
 hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 	wmat.Handler = vgui.Create 'DHTML'
+	wmat.Handler:SetSize(4096, 4096)
 	wmat.Handler:SetPaintedManually(true)
 	wmat.Handler:SetMouseInputEnabled(false)
 	wmat.Handler:SetAllowLua(true)
 	wmat.Handler:SetHTML([[ 
-		<body style="margin: 0; overflow: hidden;">
-			<div id="cont"></div>
+		<body style='margin: 0; overflow: hidden;'>
+			<div id='cont'></div>
 		</body>
-		<script type="text/JavaScript">
-			function SetImage(url){
-				document.getElementById("cont").innerHTML = "<img src='" + url + "' alt='ERROR!!' id='img'>";
-				document.getElementById("img").onload = function(){
-					console.log("RUNLUA: wmat.Handler:UpdateHTMLTexture() wmat.Queue[1].Callback(wmat.Handler:GetHTMLMaterial())");
+		<script type='text/JavaScript'>
+			function SetImage(url, w, h){
+				document.getElementById('cont').innerHTML = "<img id='img' src='" + url + "' width = '" + w + "' height = '" + h + "'>";
+				document.getElementById('img').onload = function(){
+					console.log('RUNLUA: timer.Simple(0.1, function() wmat.Handler:UpdateHTMLTexture() wmat.Queue[1].Callback(wmat.Handler:GetHTMLMaterial(), ' + w + ', ' + h + ') end)');
 				}
 			}
 		</script>
 	]])
-end)
-
-hook.Add('Think', 'wmat.Think', function()
-	if IsValid(wmat.Handler) and (not wmat.Busy) and (#wmat.Queue > 0) then
-		wmat.Handler:RunJavascript('SetImage("' .. wmat.Queue[1].URL..'")')
-		wmat.Busy = true
+	wmat.Handler.Think = function(self)
+		if (not wmat.Busy) and (#wmat.Queue > 0) then
+			local info = wmat.Queue[1]
+			self:RunJavascript('SetImage("' .. info.URL.. '", "' .. math.Clamp(info.W, 0, 4096)  .. '", "' .. math.Clamp(info.H, 0, 4096) .. '")')
+			wmat.Busy = true
+		end
 	end
 end)
 
 
 --[[
-wmat.Create('Example2', 'http://i.imgur.com/XlMRGDE.png', print)
-wmat.Create('Example1', 'http://i.imgur.com/21vNjxl.png', print)
-wmat.Create('Example3', 'http://i.imgur.com/prDBxyg.gif', print)
-wmat.Create('Example4', 'http://i.imgur.com/HZNUiFy.gif', print)
+wmat.Create('SUP', {
+	URL = 'http://portal.superiorservers.co/static/images/favicon.png',
+	W 	= 184,
+	H 	= 184,
+}, print)
 
 hook.Add('HUDPaint', 'awdawd', function()
-	for i=1, 4 do
-		if wmat.Get('Example' .. i) then 
-			surface.SetDrawColor(255,255,255,255)
-			surface.SetMaterial(wmat.Get('Example' .. i))
-			surface.DrawTexturedRect(320 * (i - 1), 0, 300, 250)
-		end
+	if wmat.Get('SUP') then 
+		surface.SetDrawColor(255,255,255,255)
+		surface.SetMaterial(wmat.Get('SUP'))
+		surface.DrawTexturedRect(10, 10, 184, 184)
 	end
 end)
 ]]
