@@ -4,13 +4,14 @@ wmat = {
 	Busy = false,
 }
 
-function wmat.Create(name, opts, callback)
+function wmat.Create(name, opts, onsuccess, onfailure)
 	table.insert(wmat.Queue, {
 		Name 		= name,
 		URL 		= string.JavascriptSafe(opts.URL),
 		W 			= (opts.W or 4096),
 		H 			= (opts.H or 4096),
-		Callback 	= function(html_mat, w, h)
+		Timeout 	= (opts.Timeout or 5),
+		OnSuccess 	= function(html_mat, w, h)
 			local id = util.CRC(opts.URL .. name)
 			local rt = GetRenderTarget('wmat_' .. id, w, h, RT_SIZE_NO_CHANGE, 0, 0, 0, 0)
 
@@ -36,8 +37,13 @@ function wmat.Create(name, opts, callback)
 			wmat.Cache[name] = mat
 			wmat.Busy = false
 
-			if callback then callback(mat) end
-		end
+			if onsuccess then onsuccess(mat) end
+		end,
+		OnFailure = function()
+			table.remove(wmat.Queue, 1)
+			wmat.Busy = false
+			if onfailure then onfailure() end
+		end,
 	})
 end
 
@@ -64,10 +70,20 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 			<div id='cont'></div>
 		</body>
 		<script type='text/JavaScript'>
-			function SetImage(url, w, h){
+			function SetImage(url, w, h, timeout){
+				var loaded = false;
+
 				document.getElementById('cont').innerHTML = "<img id='img' src='" + url + "' width = '" + w + "' height = '" + h + "'>";
+
+				setTimeout(function() {
+					if (!loaded) {
+						console.log('RUNLUA: wmat.Queue[1].OnFailure()');
+					}
+				}, timeout);
+			
 				document.getElementById('img').onload = function(){
-					console.log('RUNLUA: timer.Simple(0.1, function() wmat.Handler:UpdateHTMLTexture() wmat.Queue[1].Callback(wmat.Handler:GetHTMLMaterial(), ' + w + ', ' + h + ') end)');
+					loaded = true;
+					console.log('RUNLUA: timer.Simple(0.1, function() wmat.Handler:UpdateHTMLTexture() wmat.Queue[1].OnSuccess(wmat.Handler:GetHTMLMaterial(), ' + w + ', ' + h + ') end)');
 				}
 			}
 		</script>
@@ -75,7 +91,7 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 	wmat.Handler.Think = function(self)
 		if (not wmat.Busy) and (#wmat.Queue > 0) then
 			local info = wmat.Queue[1]
-			self:RunJavascript('SetImage("' .. info.URL.. '", "' .. math.Clamp(info.W, 0, 4096)  .. '", "' .. math.Clamp(info.H, 0, 4096) .. '")')
+			self:RunJavascript('SetImage("' .. info.URL.. '", "' .. math.Clamp(info.W, 0, 4096)  .. '", "' .. math.Clamp(info.H, 0, 4096) .. '", "' .. info.Timeout * 1000 .. '")')
 			wmat.Busy = true
 		end
 	end
@@ -87,7 +103,11 @@ wmat.Create('SUP', {
 	URL = 'http://portal.superiorservers.co/static/images/favicon.png',
 	W 	= 184,
 	H 	= 184,
-}, print)
+}, function(material)
+	print(material)
+end, function()
+	print 'cunt'
+end)
 
 hook.Add('HUDPaint', 'awdawd', function()
 	if wmat.Get('SUP') then 
@@ -95,5 +115,4 @@ hook.Add('HUDPaint', 'awdawd', function()
 		surface.SetMaterial(wmat.Get('SUP'))
 		surface.DrawTexturedRect(10, 10, 184, 184)
 	end
-end)
-]]
+end)]]
