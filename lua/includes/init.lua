@@ -135,13 +135,12 @@ end
 --[[---------------------------------------------------------
 	plib
 -----------------------------------------------------------]]
-
-for k, v in pairs(plib.LoadDir('extensions/client')) do
-	plib.IncludeCL(v)
+for k, v in pairs(plib.LoadDir('extensions')) do
+	plib.IncludeSH(v)
 end
 for k, v in pairs(plib.LoadDir('extensions/server')) do
 	plib.IncludeSV(v)
 end
-for k, v in pairs(plib.LoadDir('extensions')) do
-	plib.IncludeSH(v)
+for k, v in pairs(plib.LoadDir('extensions/client')) do
+	plib.IncludeCL(v)
 end

@@ -19,7 +19,7 @@ function wmat.Create(name, opts, onsuccess, onfailure)
 			opts.MaterialData['$basetexture'] 	= opts.MaterialData['$basetexture'] or rt:GetName()
 			opts.MaterialData['$translucent'] 	= opts.MaterialData['$translucent'] or 1
 
-			local mat = wmat.Cache[name] or CreateMaterial('wmat_' .. id, (opts.Shader or 'UnlitGeneric'), opts.MaterialData)
+			local mat = CreateMaterial('wmat_' .. id, (opts.Shader or 'UnlitGeneric'), opts.MaterialData)
 			local oldrt = render.GetRenderTarget()
 
 			render.SetViewPort(0, 0, w, h)
