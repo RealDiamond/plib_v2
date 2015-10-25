@@ -37,7 +37,6 @@ hook.Call = function(name, gm, ...)
 end
 
 local hook_Call = hook.Call
-local GAMEMODE 	= GAMEMODE
 hook.Run = function(name, ...)
 	return hook_Call(name, GAMEMODE, ...)
 end
