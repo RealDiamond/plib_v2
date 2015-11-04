@@ -112,7 +112,7 @@ else
 		hooks[name].PreArgs	= {...}
 
 		net.Receive('umsg.' .. name, function(len, ...)
-			callback(usermessage, ...)
+			usermessage.IncomingMessage(name)
 		end)
 	end
 
