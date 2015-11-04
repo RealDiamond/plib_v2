@@ -1,26 +1,5 @@
 -- Many things in garrysmod could be implemented faster but not everything needs a complete recode like the hook library so we'll chuck it here.
 
-
--- SendLua
-if (SERVER) then
-	local net_Start 		= net.Start
-	local net_WriteString 	= net.WriteString
-	local net_Send 			= net.Send
-
-	util.AddNetworkString 'speedy.SendLua'
-
-	_R.Player.SendLua = function(self, lua)
-		net_Start('speedy.SendLua')
-			net_WriteString(lua)
-		net_Send(self)
-	end	
-else
-	net.Receive('speedy.SendLua', function()
-		RunString(net.ReadString())
-	end)
-end
-
-
 -- Net
 do 
 	local IsValid 	= IsValid
