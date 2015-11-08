@@ -8,10 +8,6 @@ function string.Apostrophe(str)
 	end
 end
 
-function string.NumberCommas(str)
-	return str:reverse():gsub("(...)", "%1,"):gsub(",$", ""):reverse()
-end
-
 function string.AOrAn(s)
 	return string.match(s, "^h?[AaEeIiOoUu]") and "an" or "a"
 end
