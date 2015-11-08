@@ -165,7 +165,7 @@ else
 	end
 
 	function usermessage:ReadVectorNormal()
-		return net.ReadVector()
+		return net.ReadVector():Normalize()
 	end
 
 	function usermessage:Reset()
