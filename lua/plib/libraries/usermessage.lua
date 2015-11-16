@@ -5,6 +5,29 @@ if (SERVER) then
 	util.AddNetworkString 'umsg.SendLua'
 	util.AddNetworkString 'umsg.UnPooled'
 
+	function SendUserMessage(name, pl, ...)
+		umsg.Start(name, pl)
+		for k, v in pairs({...}) do
+			local t = type(v)
+			if (t == 'string') then
+				umsg.String(v)
+			elseif IsEntity(v) then
+				umsg.Entity(v)
+			elseif (t == 'number') then
+				umsg.Long(v)
+			elseif (t == 'Vector') then
+				umsg.Vector(v)
+			elseif (t == 'Angle') then
+				umsg.Angle(v)
+			elseif (t == 'boolean') then
+				umsg.Bool(v)
+			else
+				ErrorNoHalt('SendUserMessage: Couldn\'t send type ' .. t .. '\n')
+			end
+		end
+		umsg.End()
+	end
+
 	function BroadcastLua(lua)
 		net.Start 'umsg.SendLua'
 			net.WriteString(lua)
