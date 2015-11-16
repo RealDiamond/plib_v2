@@ -3,13 +3,12 @@ require 'tmysql'
 mysql = setmetatable({}, {
 	__call = function(self, ...)
 		return self.Connect(...)
-	end
-})
-
-mysql.GetTable = setmetatable({}, {
-	__call = function(self)
-		return self
-	end
+	end,
+	GetTable = setmetatable({}, {
+		__call = function(self)
+			return self
+		end
+	})
 })
 
 local database = setmetatable({}, {
