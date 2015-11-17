@@ -1,12 +1,16 @@
 local pairs 	= pairs
 local ipairs 	= ipairs
 
-function table.Stack( ... ) --- ???
+function table.Add( ... )
 	local final = {}
 	
 	for _, tbl in pairs( ... ) do
-		table.Add( final, tbl )
+		for _, v in pairs( tbl ) do
+			table.insert( final, v )
+		end
 	end
+	
+	return final
 end
 
 function table.Filter(tab, func)
