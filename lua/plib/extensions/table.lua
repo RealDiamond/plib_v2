@@ -1,16 +1,13 @@
-local pairs 	= pairs
-local ipairs 	= ipairs
+local pairs = pairs
 
-function table.Add( ... )
-	local final = {}
-	
-	for _, tbl in pairs( ... ) do
-		for _, v in pairs( tbl ) do
-			table.insert( final, v )
+function table.Add(...)
+	local ret = {}
+	for _, tbl in pairs(...) do
+		for _, v in pairs(tbl) do
+			ret[#ret + 1] = v
 		end
 	end
-	
-	return final
+	return ret
 end
 
 function table.Filter(tab, func)
@@ -29,9 +26,9 @@ end
 
 function table.FilterCopy(tab, func)
 	local ret = {}
-	for k, v in ipairs(tab) do
-		if func(v) then
-			ret[#ret + 1] = v
+	for i = 1, #tab do
+		if func(tab[i]) then
+			ret[#ret + 1] = tab[i]
 		end
 	end
 	return ret
