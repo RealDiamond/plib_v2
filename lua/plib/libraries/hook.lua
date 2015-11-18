@@ -1,15 +1,9 @@
---
--- hook.lua
--- optimized by thelastpenguin aka gareth
---
-
 hook 				= {}
 
 local hook 			= hook
 local table_remove 	= table.remove
 local debug_info 	= debug.getinfo
 local type 			= type
-local ipairs 		= ipairs
 local IsValid 		= IsValid
 
 local hooks 		= {}
@@ -22,8 +16,8 @@ end
 hook.Call = function(name, gm, ...) 
 	local a, b, c, d, e
 	if hooks[name] ~= nil then
-		for k,v in ipairs(hooks[name]) do
-			a, b, c, d, e = v(...)
+		for i = 1, #hooks[name] do
+			a, b, c, d, e = hooks[name][i](...)
 			if a ~= nil then
 				return a, b, c, d, e
 			end
@@ -46,9 +40,9 @@ hook.Remove = function(name, id)
 	if collection ~= nil then
 		local func = mappings[name][id]
 		if func ~= nil then
-			for k,v in ipairs(collection) do
-				if func == v then
-					table_remove(collection, k)
+			for i = 1, #collection do
+				if func == collection[i] then
+					table_remove(collection, i)
 					break 
 				end
 			end

@@ -1,15 +1,3 @@
-local pairs = pairs
-
-function table.Add(...)
-	local ret = {}
-	for _, tbl in pairs(...) do
-		for _, v in pairs(tbl) do
-			ret[#ret + 1] = v
-		end
-	end
-	return ret
-end
-
 function table.Filter(tab, func)
 	local c = 1
 	for i = 1, #tab do

@@ -24,8 +24,8 @@ end
 
 local modules = {
 	Shared = plib.LoadDir('libraries'),
-	Server = plib.LoadDir('libraries/server'),
-	Client = plib.LoadDir('libraries/client'),
+	Server = (SERVER) and plib.LoadDir('libraries/server') or {},
+	Client = (CLIENT) and plib.LoadDir('libraries/client') or {},
 	Loaded = {}
 }
 
