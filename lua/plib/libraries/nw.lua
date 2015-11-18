@@ -12,7 +12,7 @@ local nw_mt 	= {}
 nw_mt.__index 	= nw_mt
 
 local bitmap 	= {
-	[3]		= 3,
+	[3]	= 3,
 	[7] 	= 4,
 	[15] 	= 5,
 	[31] 	= 6,
@@ -25,7 +25,6 @@ local bitcount 	= 2
 local ENTITY 	= FindMetaTable('Entity')
 
 local pairs 	= pairs
-local ipairs 	= ipairs
 local Entity 	= Entity
 
 local net_WriteUInt = net.WriteUInt
@@ -190,8 +189,8 @@ if (SERVER) then
 			end
 
 			if (callbacks[pl] ~= nil) then
-				for k, v in ipairs(callbacks[pl]) do
-					v(pl)
+				for i = 1, #callbacks[pl] do
+					callbacks[pl][i](pl)
 				end
 			end
 			callbacks[pl] = nil
