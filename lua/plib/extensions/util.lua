@@ -90,7 +90,7 @@ local function DebugFixToString(obj, iscom)
 	return ret
 end
 
-function plib.PrintTable(tbl, spaces, done)
+function PrintTable(tbl, spaces, done)
 	local buffer = {}
 	local rbuf = {}
 	local maxwidth = 0
@@ -115,7 +115,7 @@ function plib.PrintTable(tbl, spaces, done)
 		MsgC(unpack((DebugFixToStringColored(key))))
 		MsgC(typecol.etc, '] '..FixTabs(buffer[i], maxwidth), typecol.etc, '= ')
 		if(type(value) == 'table' and not IsColor(value) and not done[value]) then
-			plib.PrintTable(tbl[key], spaces + 4, done)
+			PrintTable(tbl[key], spaces + 4, done)
 		else
 			local args, osc = DebugFixToStringColored(value, true)
 			overridesc = osc
@@ -131,4 +131,22 @@ function plib.PrintTable(tbl, spaces, done)
 		MsgN''
 	end
 end
-PrintTable = plib.PrintTable
+
+if (CLIENT) then
+	local name = GetConVar('sv_skyname'):GetString()
+	local areas = {'lf', 'ft', 'rt', 'bk', 'dn', 'up'}
+	local maerials = {
+	    Material('skybox/'.. name .. 'lf'),
+	    Material('skybox/'.. name .. 'ft'),
+	    Material('skybox/'.. name .. 'rt'),
+	    Material('skybox/'.. name .. 'bk'),
+	    Material('skybox/'.. name .. 'dn'),
+	    Material('skybox/'.. name .. 'up'),
+	}
+	 
+	function util.SetSkybox(skybox) -- Thanks someone from some fp post I cant find
+	    for i = 1, 6 do
+	        maerials[i]:SetTexture('$basetexture', Material('skybox/' .. skybox .. areas[i]):GetTexture('$basetexture'))
+	    end
+	end	
+end
