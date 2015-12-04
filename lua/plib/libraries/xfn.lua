@@ -161,5 +161,3 @@ function xfn.mergeStacks(...)
 	end
 end
 
-print(xfn.mergeStacks(1,2,3)(xfn.mergeStacks(3,4,5)(5,6,7)))
-
