@@ -8,6 +8,29 @@ xfn = {};
 local xfn = xfn;
 local pairs , ipairs , unpack = pairs , ipairs , unpack ;
 
+-- composes functions
+function xfn.compose(a, b, ...)
+	if not b then return a end
+	b = xfn.compose(b, ...)
+	return function(...)
+		return b(a(...))
+	end
+end
+
+-- returns the arguments
+function xfn.returnArgs(fn)
+	return function(...)
+		fn(...)
+		return ...
+	end
+end
+
+-- call all the functions with the same arguments
+function xfn.parallel(...)
+	-- its almost beautiful.
+	xfn.compose(xfn.mapStack(xfn.returnArgs, ...))
+end
+
 function xfn.filter(tab, func)
 	local c = 1
 	for i = 1, #tab do
@@ -33,24 +56,6 @@ function xfn.filterStack(...)
   return helper(...)
 end
 
-function xfn.unique( tbl )
-	local cache = {};
-	return xfn.filter(tbl, function(el)
-		if cache[el] then
-			return false;
-		else
-			cache[el] = true;
-			return true;
-		end
-	end);
-end
-
-function xfn.forEach( tbl, func )
-	for k,v in pairs( tbl )do
-		func( v, k );
-	end
-end
-
 function xfn.map( tbl, func )
 	for k,v in pairs( tbl )do
 		tbl[k] = func( v, k );
@@ -58,52 +63,30 @@ function xfn.map( tbl, func )
 	return tbl;
 end
 
+local function mapStack(fn, a, ...)
+	return fn(a), mapStack(fn, ...)
+end
+xfn.mapStack = mapStack
+
+
+-- does nothing
 function xfn.nothing() end
 xfn.noop = xfn.nothing;
 
-function xfn.fn_forEach( func )
-	return function( tbl )
-		for k,v in pairs(tbl)do
-			func( v, k );
-		end
-	end
-end
-
+-- takes no inputs
 function xfn.fn_deafen( func )
 	return function() func() end
 end
+xfn.deafen = xfn.fn_deafen
 
-xfn.table = {}
-function xfn.table.inherit(parent, new) 
-	setmetatable({}, {
-		__index = parent
-	})
-end
-
-function xfn.table.inheritCopy(parent, new) 
-	for k,v in pairs(parent)do
-		if not new[k] then
-			new[k] = v
-		end
-	end
-end
-
-function xfn.table.indexOf(tbl, value)
-	for k,v in pairs(tbl)do
-		if v == value then
-			return k
-		end
-	end
-end
-
-function xfn.fn_const(val)
-	return function()
-		return val
+-- gives no outputs
+function xfn.neuter( func )
+	return function(...)
+		func(...)
 	end
 end
 
 -- stack manipulation to the higest degree
-
 function xfn.storeArgs(...)
 	local function storeArgs(i, a, ...)
 		if i == 0 then return end
@@ -136,18 +119,3 @@ function xfn.bind(func, ...)
 		return func(_1(_2))
 	end
 end
-
-function xfn.memoize(fn)
-	local tbl = setmetatable({}, {__mode = 'k'})
-	return function(a)
-		local v = tbl[a]
-		if v == nil then
-			v = fn(a)
-			tbl[a] = v
-		end
-		return v
-	end
-end
-
--- never memorize the same function twice
-xfn.memoize(xfn.memoize)
