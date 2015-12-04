@@ -25,6 +25,11 @@ function xfn.returnArgs(fn)
 	end
 end
 
+-- identity
+function xfn.identity(...)
+	return ...
+end
+
 -- call all the functions with the same arguments
 function xfn.parallel(...)
 	-- its almost beautiful.
@@ -112,10 +117,49 @@ function xfn.storeArgs(...)
 	return storeArgs(c, ...)
 end
 
-function xfn.bind(func, ...)
-	local _1 = xfn.storeArgs(...)
-	return function(...)
-		local _2 = xfn.storeArgs(...)
-		return func(_1(_2))
+function xfn.curry(fn, arguments)
+	if arguments == 1 then return fn end
+	return function(a)
+		return xfn.curry(
+			function(...)
+				return fn(a, ...)
+			end,
+			arguments - 1)
 	end
 end
+
+function xfn.applyArgsToCurriedFunction(fn, ...)
+	local count = select('#', ...)
+	local function h_apply(count, fn, a, ...)
+		if count == 0 then return fn end
+		return h_apply(count - 1, fn(a), ...)
+	end
+
+	return h_apply(select('#', ...), fn, ...)
+end
+
+function xfn.bind(fn, ...)
+	local curried = xfn.applyArgsToCurriedFunction(
+		xfn.curry(fn, select('#', ...) + 1),
+		...)
+	return function(...)
+		curried(...)
+	end
+end
+xfn.partial = xfn.bind
+
+function xfn.storeArgs(...)
+	return xfn.applyArgsToCurriedFunction(
+		xfn.curry(xfn.identity, select('#', ...) + 1),
+		...)
+end
+
+function xfn.mergeStacks(...)
+	local stack = xfn.storeArgs(...)
+	return function(...)
+		return stack(...)
+	end
+end
+
+print(xfn.mergeStacks(1,2,3)(xfn.mergeStacks(3,4,5)(5,6,7)))
+
