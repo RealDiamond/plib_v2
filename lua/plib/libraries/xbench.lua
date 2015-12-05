@@ -17,7 +17,7 @@ end
 function xbench.Pop()
 	local ret = stack[#stack]
 	stack[#stack] = nil
-	return os_time() - ret
+	return os_clock() - ret
 end
 
 function xbench.Run(func, calls)
@@ -29,7 +29,7 @@ function xbench.Run(func, calls)
 end
 
 function xbench.Compare(funcs, calls)
-	local lowest = -1
+	local lowest = math.huge
 	local results = {}
 	for k, v in pairs(funcs) do
 		local runtime = xbench.Run(v, calls)
@@ -40,9 +40,9 @@ function xbench.Compare(funcs, calls)
 	end
 	for k, v in pairs(results) do
 		if (v == lowest) then
-			MsgC(col_green, tostring(k):upper() .. ': ', col_white, v)
+			MsgC(col_green, tostring(k):upper() .. ': ', col_white, v .. '\n')
 		else
-			MsgC(col_red, tostring(k):upper() .. ': ', col_white, v)
+			MsgC(col_red, tostring(k):upper() .. ': ', col_white, v .. '\n')
 		end
 	end
 end
