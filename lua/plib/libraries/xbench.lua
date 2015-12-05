@@ -2,18 +2,22 @@ xbench = {}
 
 local os_clock 	= os.clock
 local pairs 	= pairs
+local tostring 	= tostring
+local MsgC 		= MsgC
 
 local col_white = Color(250,250,250)
 local col_red 	= Color(255,0,0)
 local col_green = Color(0,255,0)
 
-local start_time = 0
+local stack = {}
 function xbench.Push()
-	start_time = os_clock()
+	stack[#stack + 1] = os_clock()
 end
 
 function xbench.Pop()
-	return os_time() - start_time
+	local ret = stack[#stack]
+	stack[#stack] = nil
+	return os_time() - ret
 end
 
 function xbench.Run(func, calls)
@@ -21,18 +25,14 @@ function xbench.Run(func, calls)
 	for i = 1, (calls or 1000) do
 		func()
 	end
-	print(xbench.Pop())
+	return xbench.Pop()
 end
 
 function xbench.Compare(funcs, calls)
 	local lowest = -1
 	local results = {}
 	for k, v in pairs(funcs) do
-		xbench.Push()
-		for i = 1, (calls or 1000) do
-			v()
-		end
-		local runtime = xbench.Pop()
+		local runtime = xbench.Run(v, calls)
 		results[k] = runtime
 		if (runtime < lowest) then
 			lowest = runtime
