@@ -159,3 +159,67 @@ function random.RandomGaussianFloat( flMean, flStdDev )
 		return flStdDev * flRandomValue + flMean
 	end
 end
+
+function _R.Entity:GetPredictionRandomSeed() -- Fix; overwrite Player commandnum
+	local seed = self:EntIndex()
+	
+	if ( self:IsPlayer() ) then
+		seed = bit.band( self:GetCurrentCommand():CommandNumber(), 255 )
+	end
+	
+	return seed
+end
+
+function random.SeedFileLineHash( seedvalue, sharedname, additionalSeed )
+	return tonumber( util.CRC( ("%i%i%s"):format( seedvalue, additionalSeed, sharedname ) ) )
+end
+
+function _R.Entity:SharedRandomFloat( sharedname, flMinVal, flMaxVal, additionalSeed )
+	local iSeed = self:GetPredictionRandomSeed()
+	assert( iSeed ~= -1 )
+	
+	additionalSeed = additionalSeed or 0
+	local seed = random.SeedFileLineHash( iSeed, sharedname, additionalSeed )
+	random.SetSeed( seed )
+	return random.RandomFloat( flMinVal, flMaxVal )
+end
+
+function _R.Entity:SharedRandomInt( sharedname, iMinVal, iMaxVal, additionalSeed )
+	local iSeed = self:GetPredictionRandomSeed()
+	assert( iSeed ~= -1 )
+	
+	additionalSeed = additionalSeed or 0
+	local seed = random.SeedFileLineHash( iSeed, sharedname, additionalSeed )
+	random.SetSeed( seed )
+	return random.RandomInt( iMinVal, iMaxVal )
+end
+
+function _R.Entity:SharedRandomVector( sharedname, minVal, maxVal, additionalSeed /*=0*/ )
+	local iSeed = self:GetPredictionRandomSeed()
+	assert( iSeed ~= -1 )
+	
+	additionalSeed = additionalSeed or 0
+	local seed = random.SeedFileLineHash( iSeed, sharedname, additionalSeed )
+	random.SetSeed( seed )
+	// HACK:  Can't call RandomVector/Angle because it uses rand() not vstlib Random*() functions!
+	// Get a random vector.
+	
+	return Vector( random.RandomFloat( minVal, maxVal ), 
+						random.RandomFloat( minVal, maxVal ), 
+						random.RandomFloat( minVal, maxVal ) )
+end
+
+function _R.Entity:SharedRandomAngle( sharedname, minVal, maxVal, additionalSeed /*=0*/ )
+	local iSeed = self:GetPredictionRandomSeed()
+	assert( iSeed ~= -1 )
+	
+	additionalSeed = additionalSeed or 0
+	local seed = random.SeedFileLineHash( iSeed, sharedname, additionalSeed )
+	random.SetSeed( seed )
+	// HACK:  Can't call RandomVector/Angle because it uses rand() not vstlib Random*() functions!
+	// Get a random angle
+	
+	return Angle( random.RandomFloat( minVal, maxVal ), 
+						random.RandomFloat( minVal, maxVal ), 
+						random.RandomFloat( minVal, maxVal ) )
+end
