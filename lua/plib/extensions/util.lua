@@ -157,7 +157,7 @@ local HSVToColor = HSVToColor
 local incr = SERVER and 72 or 0
 local fileColors = {}
 local fileAbbrev = {}
-local MsgC , print = _G.MsgC , _G.oprint
+local MsgC , print = _G.MsgC , _G.print
 
 local function concat(tab)
 	local str = ' '
