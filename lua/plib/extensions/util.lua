@@ -152,12 +152,20 @@ if (CLIENT) then
 end
 
 
-local col_grey = Color(100,100,100)
+local col_white = Color(255,255,255)
 local HSVToColor = HSVToColor 
 local incr = SERVER and 72 or 0
 local fileColors = {}
 local fileAbbrev = {}
-local MsgC , print = _G.MsgC , _G.print
+local MsgC , print = _G.MsgC , _G.oprint
+
+local function concat(tab)
+	local str = ' '
+	for k, v in ipairs(tab) do
+		str = str .. '	' .. tostring(v)
+	end
+	return str
+end
 
 function dprint(...)
 	local info = debug.getinfo(2)
@@ -181,7 +189,5 @@ function dprint(...)
 		fileColors[fname] = HSVToColor(incr * 100 % 255, 1, 1)
 	end
 	
-	MsgC(fileColors[fname], fname .. ':' .. info.linedefined)
-	print(' -', ...)
-end
+	MsgC(fileColors[fname], fname .. ':' .. info.linedefined, col_white, concat({...}) .. '\n')
 end
