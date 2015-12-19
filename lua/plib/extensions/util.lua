@@ -161,7 +161,7 @@ local MsgC , print = _G.MsgC , _G.print
 
 function dprint(...)
 	local info = debug.getinfo(2)
-	if not info then 
+	if (not info) then 
 		print(...)
 		return
 	end
@@ -176,11 +176,12 @@ function dprint(...)
 		fileAbbrev[oldfname] = fname
 	end
 	
-	if not fileColors[fname] then
+	if (not fileColors[fname]) then
 		incr = incr + 1
 		fileColors[fname] = HSVToColor(incr * 100 % 255, 1, 1)
 	end
 	
-	MsgC(fileColors[fname], fname..':'..info.linedefined)
-	print( '  ', ... )
+	MsgC(fileColors[fname], fname .. ':' .. info.linedefined)
+	print(' -', ...)
+end
 end
