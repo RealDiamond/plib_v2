@@ -153,16 +153,19 @@ end
 
 
 local col_white = Color(255,255,255)
-local HSVToColor = HSVToColor 
 local incr = SERVER and 72 or 0
 local fileColors = {}
 local fileAbbrev = {}
-local MsgC , print = _G.MsgC , _G.print
 
 local function concat(tab)
-	local str = ' '
+	local str = ''
 	for k, v in ipairs(tab) do
-		str = str .. '	' .. tostring(v)
+		if (v == nil) then
+			str = str .. '	nil'
+		else
+			str = str .. '	' .. tostring(v)
+		end
+		
 	end
 	return str
 end
