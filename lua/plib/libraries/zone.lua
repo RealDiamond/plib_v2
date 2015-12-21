@@ -48,7 +48,7 @@ do
 	-- No ovoid support for now b/c too expensive
 	function Sphere( center, radius )
 		return setmetatable( {  x = center.x, y = center.y, z = center.z, 
-								radius = radius }, SPHERE )
+								r = radius }, SPHERE )
 	end
 
 	-- Caching
@@ -62,5 +62,13 @@ do
 		vecZ = point.z
 		
 		return ( vecX - self.x )^2 + ( vecY - self.y )^2 + ( vecZ - self.z )^2 <= r^2 -- Check if ^2 or *itself is less expensive
+	end
+	
+	function SPHERE:GetCenter()
+		return Vector( self.x, self.y, self.z )
+	end
+	
+	function SPHERE:GetRadius()
+		return self.r
 	end
 end
