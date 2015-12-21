@@ -3,8 +3,8 @@ local _R = debug.getregistry()
 do
 	local PRISM = {}
 
-	_R.Prism = PRISM
-	_R.Prism.__index = _R.Prism
+	_R.QuadPrism = PRISM
+	_R.QuadPrism.__index = _R.QuadPrism
 	
 	function QuadPrism( mins, maxs )
 		return setmetatable( {	minX = mins.x, minY = mins.y, minZ = mins.z,
