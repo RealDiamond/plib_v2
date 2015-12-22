@@ -58,5 +58,4 @@ function util.URLDecode(str)
 	return str:gsub( "+", " " ):gsub( "%%(%x%x)", function( hex )
 		return string.char( tonumber( hex, 16 ) )
 	end )
-	return r
 end
