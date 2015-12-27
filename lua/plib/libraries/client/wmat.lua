@@ -5,8 +5,6 @@ wmat = {
 	HandlerURL = ''
 }
 
-require 'xbench'
-
 function wmat.Create(name, opts, onsuccess, onfailure)
 	local crc = util.CRC(name .. '.' .. opts.URL)
 	table.insert(wmat.Queue, {
@@ -17,8 +15,8 @@ function wmat.Create(name, opts, onsuccess, onfailure)
 		W 			= (opts.W or 4096),
 		H 			= (opts.H or 4096),
 		Timeout 	= (opts.Timeout or 5),
-		OnSuccess 	= function(html_mat, w, h, wascached)
-			local id = util.CRC(opts.URL .. name)
+		OnSuccess 	= function(this, html_mat, w, h)
+			local id = util.CRC(this.URL .. name)
 			local rt = GetRenderTarget('wmat_' .. id, w, h, RT_SIZE_NO_CHANGE, 0, 0, 0, 0)
 
 			opts.MaterialData 					= opts.MaterialData 				or {}
@@ -39,27 +37,22 @@ function wmat.Create(name, opts, onsuccess, onfailure)
 			render.SetViewPort(0, 0, ScrW(), ScrH())
 			render.SetRenderTarget(oldrt)
 			
-			if (!wascached and opts.Cache) then wmat.Queue[1].CompleteCache() end
+			if (!this.LoadedFromCache and this.Cache) then this:CompleteCache() end
+			if (this.LoadedFromCache) then print(this.Name .. " successfully loaded from cache.") end
 
-			table.remove(wmat.Queue, 1)
 			wmat.Cache[name] = mat
-			wmat.Busy = false
 
 			if onsuccess then onsuccess(mat) end
 		end,
-		OnFailure = function()
-			if (wmat.Queue[1].NoFail) then return end
-			
-			table.remove(wmat.Queue, 1)
-			wmat.Busy = false
+		OnFailure = function(this)
 			if onfailure then onfailure() end
 		end,
 		Base64 = '',
-		CacheChunk = function(chunk)
-			wmat.Queue[1].Base64 = wmat.Queue[1].Base64 .. chunk		
+		CacheChunk = function(this, chunk)
+			this.Base64 = this.Base64 .. chunk		
 		end,
-		CompleteCache = function()		
-			file.WriteStaggered('wmatcache/' .. crc, wmat.Queue[1].Base64, function() end)
+		CompleteCache = function(this)
+			file.WriteStaggered('wmatcache/' .. crc, this.Base64, function() end)
 		end
 	})
 end
@@ -78,6 +71,38 @@ end
 
 function wmat.SetHandler(handler)
 	wmat.HandlerURL = handler
+end
+
+function wmat.Succeed()
+	wmat.Handler:UpdateHTMLTexture()
+	
+	local inf = wmat.Queue[1]
+	
+	if (inf) then
+		inf:OnSuccess(wmat.Handler:GetHTMLMaterial(), inf.W, inf.H)
+	end
+	
+	table.remove(wmat.Queue, 1)
+	wmat.Busy = false
+end
+
+function wmat.Fail()
+	local inf = wmat.Queue[1]
+	
+	if (inf) then
+		inf:OnFailure()
+	end
+	
+	table.remove(wmat.Queue, 1)
+	wmat.Busy = false
+end
+
+function wmat.Chunk(data)
+	local inf = wmat.Queue[1]
+	
+	if (inf) then
+		inf:CacheChunk(data)
+	end
 end
 
 hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
@@ -100,11 +125,11 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 			var w = 0;
 			var h = 0;
 			function handleChunk() {
-				console.log('RUNLUA: wmat.Queue[1].CacheChunk("' + base64.substring(step, step+chunkSize) + '")');
+				console.log('RUNLUA:wmat.Chunk("' + base64.substring(step, step+chunkSize) + '")');
 				step = step + chunkSize + 1;
 				
 				if (b64size < step) {
-					console.log('RUNLUA: timer.Simple(0.1, function() wmat.Handler:UpdateHTMLTexture() wmat.Queue[1].OnSuccess(wmat.Handler:GetHTMLMaterial(), ' + w + ', ' + h + ') end)');
+					console.log('RUNLUA:timer.Simple(0.1, wmat.Succeed)');
 					clearInterval(timerVar);
 				}
 			}
@@ -124,7 +149,7 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 				
 				setTimeout(function() {
 					if (!loaded) {
-						console.log('RUNLUA: wmat.Queue[1].OnFailure()');
+						console.log('RUNLUA:wmat.Fail()');
 					}
 				}, timeout);
 			
@@ -143,7 +168,7 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 						b64size = base64.length;
 						timerVar = setInterval(handleChunk, 100);
 					} else {
-						console.log('RUNLUA: timer.Simple(0.1, function() wmat.Handler:UpdateHTMLTexture() wmat.Queue[1].OnSuccess(wmat.Handler:GetHTMLMaterial(), ' + w + ', ' + h + ') end)');
+						console.log('RUNLUA:timer.Simple(0.1, wmat.Succeed)');
 					}
 				}
 				
@@ -154,7 +179,7 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 				document.getElementById('cont').innerHTML = "<img id='img' width = '" + w + "' height = '" + h + "'>";
 				
 				document.getElementById('img').onload = function() {
-					console.log('RUNLUA: timer.Simple(0.5, function() wmat.Handler:UpdateHTMLTexture() wmat.Queue[1].OnSuccess(wmat.Handler:GetHTMLMaterial(), ' + w + ', ' + h + ', true) end)');
+					console.log('RUNLUA:timer.Simple(0.5, wmat.Succeed)');
 				}
 				
 				document.getElementById('img').src = data;
@@ -173,7 +198,7 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 				--print("Loading " .. info.Name .. " from cache instead.")
 				
 				file.ReadStaggered('wmatcache/' .. info.CRC, function(data)
-					--print("The data is " .. #data)
+					info.LoadedFromCache = true
 					self:RunJavascript('SetImageData("' .. data .. '", "' .. math.Clamp(info.W, 0, 4096)  .. '", "' .. math.Clamp(info.H, 0, 4096) .. '")')
 				end)
 			else
