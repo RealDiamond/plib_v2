@@ -95,32 +95,6 @@ function xfn.neuter( func )
 	end
 end
 
--- stack manipulation to the higest degree
-function xfn.storeArgs(...)
-	local function storeArgs(i, a, ...)
-		if i == 0 then return end
-
-		local next = storeArgs(i - 1, ...)
-		if next then
-			return function(after)
-				return a, next(after)
-			end
-		else
-			return function(after)
-				if after then
-					return a, after()
-				end
-				return a
-			end
-		end
-	end
-
-	local c = select('#', ...)
-	if c == 0 then return function() end end
-
-	return storeArgs(c, ...)
-end
-
 function xfn.curry(fn, arguments)
 	if arguments == 1 then return fn end
 	return function(a)
