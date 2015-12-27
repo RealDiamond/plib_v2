@@ -1,87 +1,78 @@
 local chunkSize		= 512 * 1024	-- Number of bytes to store in each chunk
 local interval		= 0.1			-- Time between each chunk read/write
+local workQueue = {}
 
-local w = 1
-local r = 2
-
-local staggeredOps	= {}
-
-local function handleStaggeredOps()
-	local op = staggeredOps[1]
-	
-	if (!op) then
-		timer.Destroy('file.DoStaggeredOperations')
-		return
-	end
-	
-	if (op.Type == w) then
-		if (op.Parts == 0 and !file.IsDir(op.Name, 'DATA')) then
-			file.CreateDir(op.Name)
-			
-			return
-		end
-		
-		if (#op.Data < op.Step) then
-			file.Write(op.Name .. '/meta.dat', tostring(op.Parts))
-			
-			if (op.Callback) then
-				op.Callback(op.Parts)
+local function processQueue(queue)
+	if timer.Exists('file.DoStaggered') then return end
+	if workQueue[1] then
+		-- take something from the beginning of the queue and create
+		-- a timer to repeatedly do it until it is odne
+		local func = table.remove(workQueue, 1)
+		timer.Create('file.DoStaggered', interval, 0, function()
+			if func() then
+				timer.Destroy('file.DoStaggered')
+				processQueue()
 			end
-			
-			table.remove(staggeredOps, 1)
-			
-			return
-		end
-		
-		op.Parts = op.Parts + 1
-		file.Write(op.Name .. '/' .. op.Parts .. '.dat', op.Data:sub(op.Step, op.Step + chunkSize))
-		op.Step = op.Step + chunkSize + 1
-	elseif (op.Type == r) then
-		if (op.Parts == op.Step) then
-			if (op.Callback) then
-				op.Callback(op.Data)
-			end
-			
-			table.remove(staggeredOps, 1)
-			
-			return
-		end
-		
-		op.Step = op.Step + 1
-		op.Data = op.Data .. file.Read(op.Name .. '/' .. op.Step .. '.dat', 'DATA')
-	end
-end
-
-function file.WriteStaggered(name, data, callback)
-	table.insert(staggeredOps, {
-		Type	= w,
-		Name	= name,
-		Data	= data,
-		Parts	= 0,
-		Step	= 1,
-		Callback = callback
-	})
-	
-	if (!timer.Exists('file.DoStaggeredOperations')) then
-		timer.Create('file.DoStaggeredOperations', interval, 0, handleStaggeredOps)
-	end
-end
-
-function file.ReadStaggered(name, callback)
-	if (file.Exists(name .. '/meta.dat', 'DATA')) then
-		table.insert(staggeredOps, {
-			Type		= r,
-			Name		= name,
-			Data		= '',
-			Parts		= tonumber(file.Read(name .. '/meta.dat')),
-			Step		= 0,
-			Callback	= callback
-		})
-		
-		if (!timer.Exists('file.DoStaggeredOperations')) then
-			timer.Create('file.DoStaggeredOperations', interval, 0, handleStaggeredOps)
-		end
+		end)
 	else
-		callback('')
+		-- else there is no more work so we are done
+		timer.Destroy('file.DoStaggered')
 	end
+end
+function file.ReadStaggered(name, callback)
+	-- if there does not appear to be an extension add one
+	if not string.find(name, '.') then name = name .. '.dat' end
+
+	-- open the file
+	local f = file.Open(name, 'rb', 'DATA')
+	if not f then error('failed to open file ' .. name .. '.') end
+
+	-- we will construct a function
+	-- to read the file in segments
+	-- and call the callback when done
+	do 
+		local buffer = {}
+		local function doRead()
+			local data = f:Read(chunkSize)
+			if not data or data:len() == 0 then
+				f:Close()
+				callback(table.concat(buffer))
+				return true -- tell it to schedule the next job. this one is done.
+			else
+				buffer[#buffer + 1] = data
+				return false
+			end
+		end
+		table.insert(workQueue, doRead)
+	end
+	processQueue()
+end
+
+function file.WriteStaggered(name, str, callback)
+	-- if there does not appear to be an extension add one
+	if not string.find(name, '.') then name = name .. '.dat' end
+
+	-- open the file
+	local f = file.Open(name, 'wb', 'DATA')
+	if not f then error('failed to open file ' .. name .. '.') end
+
+	-- we will construct a function
+	-- to read the file in segments
+	-- and call the callback when done
+	do 
+		local len = str:len()
+		local index = 0
+		local function doWrite()
+			local segment = string.sub(str, index * chunkSize, (index + 1) * chunkSize)
+			f:Write(segment)
+			index = index + 1
+			if index * chunkSize > len then
+				f:Close()
+				callback(name)
+				return true -- tell it to schedule the next job. this one is done.
+			end
+		end
+		table.insert(workQueue, doWrite)
+	end
+	processQueue()
 end
