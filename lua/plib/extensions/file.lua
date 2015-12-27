@@ -20,9 +20,6 @@ local function processQueue(queue)
 	end
 end
 function file.ReadStaggered(name, callback)
-	-- if there does not appear to be an extension add one
-	if not string.find(name, '.') then name = name .. '.dat' end
-
 	-- open the file
 	local f = file.Open(name, 'rb', 'DATA')
 	if not f then error('failed to open file ' .. name .. '.') end
@@ -49,9 +46,6 @@ function file.ReadStaggered(name, callback)
 end
 
 function file.WriteStaggered(name, str, callback)
-	-- if there does not appear to be an extension add one
-	if not string.find(name, '.') then name = name .. '.dat' end
-
 	-- open the file
 	local f = file.Open(name, 'wb', 'DATA')
 	if not f then error('failed to open file ' .. name .. '.') end
