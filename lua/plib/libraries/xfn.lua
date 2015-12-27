@@ -54,17 +54,6 @@ function xfn.filter(tab, func)
 	return tab
 end
 
-function xfn.filterStack(...)
-  local helper = function(a, ...)
-    if fn(a) then
-      return a, helper(...)
-    else
-      return helper(...)
-    end
-  end
-  return helper(...)
-end
-
 function xfn.map( tbl, func )
 	for k,v in pairs( tbl )do
 		tbl[k] = func( v, k );
@@ -72,8 +61,12 @@ function xfn.map( tbl, func )
 	return tbl;
 end
 
-local function mapStack(fn, a, ...)
-	return fn(a), mapStack(fn, ...)
+local function mapStack(fn, ...)
+	local function helper(count, a, ...)
+		if count == 0 then return end
+		return fn(a), helper(count - 1, ...)
+	end
+	return helper(select('#', ...), ...)
 end
 xfn.mapStack = mapStack
 
