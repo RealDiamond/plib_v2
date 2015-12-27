@@ -4,7 +4,11 @@ _p_modules\lua\includes\modules\xfn.luasrc
 
 Copyright 08/24/2014 thelastpenguin
 ]]
-xfn = {};
+
+xfn = {
+	version = (function(a, b, c) return a * 10000 + b * 100 + c end)(1,0,0)
+}
+
 local xfn = xfn;
 local pairs , ipairs , unpack = pairs , ipairs , unpack ;
 
