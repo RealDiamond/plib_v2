@@ -194,3 +194,55 @@ function dprint(...)
 	
 	MsgC(fileColors[fname], fname .. ':' .. info.linedefined, col_white, concat({...}) .. '\n')
 end
+
+-- Tracer flags
+TRACER_FLAG_WHIZ = 0x0001
+TRACER_FLAG_USEATTACHMENT = 0x0002
+
+TRACER_DONT_USE_ATTACHMENT = -1
+
+--[[---------------------------------------------------------
+   Name: Tracer( vecStart, vecEnd, pEntity, iAttachment, flVelocity, bWhiz, pCustomTracerName, iParticleID )
+   Desc: Create a tracer effect
+-----------------------------------------------------------]]
+function util.Tracer( vecStart, vecEnd, pEntity, iAttachment, flVelocity, bWhiz, pCustomTracerName, iParticleID )
+	local data = EffectData()
+	data:SetStart( vecStart )
+	data:SetOrigin( vecEnd )
+	data:SetEntity( pEntity )
+	data:SetScale( flVelocity )
+	
+	if ( iParticleID ~= nil ) then
+		data:SetHitBox( iParticleID )
+	end
+
+	local fFlags = data:GetFlags()
+
+	-- Flags
+	if ( bWhiz ) then
+		fFlags = bit.bor( fFlags, TRACER_FLAG_WHIZ )
+	end
+
+	if ( iAttachment ~= TRACER_DONT_USE_ATTACHMENT ) then
+		fFlags = bit.bor( fFlags, TRACER_FLAG_USEATTACHMENT )
+		data:SetAttachment( iAttachment )
+	end
+
+	data:SetFlags( fFlags )
+
+	-- Fire it off
+	if ( pCustomTracerName ) then
+		util.Effect( pCustomTracerName, data )
+	else
+		util.Effect( "Tracer", data )
+	end
+end
+
+--[[---------------------------------------------------------
+	Linear interpolates between two colors
+-----------------------------------------------------------]]
+function LerpColor( fraction, from, to )
+
+	return Color( Lerp( fraction, from.r, to.r ), Lerp( fraction, from.g, to.g ), Lerp( fraction, from.b, to.b ), Lerp( fraction, from.a, to.a ) )
+
+end
