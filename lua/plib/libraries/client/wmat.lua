@@ -177,12 +177,9 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 			
 			function SetImageData(data, w, h){
 				document.getElementById('cont').innerHTML = "<img id='img' width = '" + w + "' height = '" + h + "'>";
-				
-				document.getElementById('img').onload = function() {
-					console.log('RUNLUA:timer.Simple(0.5, wmat.Succeed)');
-				}
-				
 				document.getElementById('img').src = data;
+				
+				console.log('RUNLUA:timer.Simple(0.5, wmat.Succeed)');
 			}
 		</script>
 	]])
@@ -193,9 +190,9 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 			
 			if (!file.Exists('wmatcache', 'DATA') or !file.IsDir('wmatcache', 'DATA')) then file.CreateDir('wmatcache') end
 			
-			if (file.Exists('wmatcache/' .. info.CRC .. '/meta.dat', 'DATA')) then
+			if (file.Exists('wmatcache/' .. info.CRC .. '.dat', 'DATA')) then
 				wmat.Busy = true
-				--print("Loading " .. info.Name .. " from cache instead.")
+				print("Loading " .. info.Name .. " from cache instead.")
 				
 				file.ReadStaggered('wmatcache/' .. info.CRC .. '.dat', function(data)
 					info.LoadedFromCache = true

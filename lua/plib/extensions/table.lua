@@ -21,3 +21,14 @@ function table.FilterCopy(tab, func)
 	end
 	return ret
 end
+
+function table.ConcatKeys(tab, concatenator)
+	concatenator = concatenator or ''
+	local str = ''
+	
+	for k, v in pairs(tab) do
+		str = (str != '' and concatenator or str) .. k
+	end
+	
+	return str
+end

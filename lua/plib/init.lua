@@ -1,4 +1,6 @@
-plib = {}
+plib = {
+	BadModules = {}
+}
 _R 	 = debug.getregistry()
 
 -- To do, add IncludeDir, IncudeDirSV, IncudeDirSH, IncudeDirCL
@@ -23,13 +25,25 @@ function plib.LoadDir(dir)
 end
 
 local modules = {
+	preload = {
+		Shared = plib.LoadDir('preload'),
+		Server = (SERVER) and plib.LoadDir('preload/server') or {},
+		Client = plib.LoadDir('preload/client'),
+	},
 	Shared = plib.LoadDir('libraries'),
 	Server = (SERVER) and plib.LoadDir('libraries/server') or {},
 	Client = plib.LoadDir('libraries/client'),
 	Loaded = {}
 }
 
+for k, v in pairs(modules.preload.Shared) do
+	plib.IncludeSH(v)
+end
+
 if (SERVER) then
+	for k, v in pairs(modules.preload.Server) do
+		plib.IncludeSV(v)
+	end
 	for k, v in pairs(modules.Shared) do
 		AddCSLuaFile(v)
 	end
@@ -38,13 +52,17 @@ if (SERVER) then
 	end
 end
 
+for k, v in pairs(modules.preload.Client) do
+	plib.IncludeCL(v)
+end
+
 local _require = require
 function require(name)
 	local lib = modules.Shared[name] or modules.Server[name] or modules.Client[name]
-	if (lib ~= nil) and (not modules.Loaded[name]) then
+	if (lib ~= nil) and (not modules.Loaded[name]) and (not plib.BadModules[name]) then
 		modules.Loaded[name] = true
 		return include(lib)
-	elseif (not modules.Loaded[name]) then
+	elseif (not modules.Loaded[name]) and (not plib.BadModules[name]) then
 		return _require(name)
 	end
 end
