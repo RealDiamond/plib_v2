@@ -7,35 +7,20 @@ do
 	_R.QuadPrism.__index = _R.QuadPrism
 	
 	function QuadPrism( mins, maxs )
-		return setmetatable( {	minX = mins.x, minY = mins.y, minZ = mins.z,
-								maxX = maxs.x, maxY = maxs.y, maxZ = maxs.z }, PRISM )
+		return setmetatable( {	minVec = mins, minX = mins.x, minY = mins.y, minZ = mins.z,
+								maxVec = maxs, maxX = maxs.x, maxY = maxs.y, maxZ = maxs.z }, PRISM )
 	end
 
-	-- Caching
-	local vecX
-	local vecY
-	local vecZ
-
 	function PRISM:PointInside( point )
-		vecX = point.x
-		vecY = point.y
-		vecZ = point.z
-		
-		if ( vecX < self.minX or vecX > self.maxX or 
-			vecY < self.minY or vecY > self.maxY or
-			vecZ < self.minZ or vecZ > self.maxZ ) then
-			return false
-		end
-		
-		return true
+		return point:WithinAABox( self.minVec, self.maxVec )
 	end
 	
 	function PRISM:GetMins()
-		return Vector( self.minX, self.minY, self.minZ )
+		return self.minVec
 	end
 	
 	function PRISM:GetMaxs()
-		return Vector( self.maxX, self.maxY, self.maxZ )
+		return self.maxVec
 	end
 end
 
@@ -45,12 +30,16 @@ do
 	_R.Sphere = SPHERE
 	_R.Sphere.__index = _R.Sphere
 	
+	local r2 = 0
+	
 	-- No ovoid support for now b/c too expensive
 	function Sphere( center, radius )
-		return setmetatable( {  x = center.x, y = center.y, z = center.z, 
+		r2 = radius^2 -- cache
+		return setmetatable( {  centVec = center, 
+								x = center.x, y = center.y, z = center.z, 
 								r = radius }, SPHERE )
 	end
-
+	
 	-- Caching
 	local vecX
 	local vecY
@@ -61,11 +50,11 @@ do
 		vecY = point.y
 		vecZ = point.z
 		
-		return ( vecX - self.x )^2 + ( vecY - self.y )^2 + ( vecZ - self.z )^2 <= r^2 -- Check if ^2 or *itself is less expensive
+		return ( vecX - self.x )^2 + ( vecY - self.y )^2 + ( vecZ - self.z )^2 <= r2 -- Check if ^2 or *itself is less expensive than square root
 	end
 	
 	function SPHERE:GetCenter()
-		return Vector( self.x, self.y, self.z )
+		return center
 	end
 	
 	function SPHERE:GetRadius()
