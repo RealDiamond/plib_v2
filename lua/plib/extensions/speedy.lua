@@ -18,7 +18,7 @@ do
 
 	function net.ReadEntity()
 		local i = ReadUInt(12)
-		if not i then return end
+		if (not i) then return end
 		return Entity(i)
 	end
 

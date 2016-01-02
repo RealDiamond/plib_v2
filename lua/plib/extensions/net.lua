@@ -1,3 +1,5 @@
+local IsValid 	= IsValid
+local Entity 	= Entity
 local WriteUInt = net.WriteUInt
 local ReadUInt 	= net.ReadUInt
 
@@ -31,4 +33,18 @@ end
 
 function net.ReadLong()
 	return ReadUInt(i, 32)
+end
+
+function net.WritePlayer(pl)
+	if IsValid(pl) then 
+		WriteUInt(pl:EntIndex(), 8)
+	else
+		WriteUInt(0, 8)
+	end
+end
+
+function net.ReadPlayer()
+	local i = ReadUInt(8)
+	if (not i) then return end
+	return Entity(i)
 end

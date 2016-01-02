@@ -35,7 +35,7 @@ local nw_mt 	= {}
 nw_mt.__index 	= nw_mt
 
 local bitmap 	= {
-	[3]	= 3,
+	[3]		= 3,
 	[7] 	= 4,
 	[15] 	= 5,
 	[31] 	= 6,
@@ -45,7 +45,7 @@ local bitmap 	= {
 
 local bitcount 	= 2
 
-local ENTITY 	= FindMetaTable('Entity')
+local ENTITY 	= FindMetaTable 'Entity'
 
 local pairs 	= pairs
 local Entity 	= Entity
@@ -54,6 +54,7 @@ local net_WriteUInt = net.WriteUInt
 local net_ReadUInt 	= net.ReadUInt
 local net_Start 	= net.Start
 local net_Send 		= (SERVER) and net.Send or net.SendToServer
+local net_Broadcast = net.Broadcast
 local net_Broadcast = net.Broadcast
 local player_GetAll = player.GetAll
 local sorted_pairs 	= SortedPairsByMemberValue
@@ -65,7 +66,11 @@ function nw.Register(var, info) -- You must always call this on both the client 
 		WriteFunc = net.WriteType,
 		ReadFunc = net.ReadType,
 		SendFunc = function(self, ent, value, recipients)
-			net_Send(recipients or player_GetAll())
+			if (recipients ~= nil) then
+				net_Send(recipients)
+			else
+				net_Broadcast()
+			end
 		end,
 	}
 	setmetatable(t, nw_mt)
@@ -117,10 +122,16 @@ function nw_mt:Filter(func)
 	return self:_Construct()
 end
 
-function nw_mt:SetLocal()
-	self.LocalVar = true
+function nw_mt:SetPlayer()
+	self.PlayerVar = true
 	return self:_Construct()
 end
+
+function nw_mt:SetLocalPlayer()
+	self.LocalPlayerVar = true
+	return self:_Construct()
+end
+nw_mt.SetLocal = nw_mt.SetLocalPlayer -- backward support
 
 function nw_mt:SetGlobal()
 	self.GlobalVar = true
@@ -142,7 +153,15 @@ function nw_mt:_Construct()
 	local WriteFunc = self.WriteFunc
 	local ReadFunc 	= self.ReadFunc
 
-	if self.LocalVar then
+	if self.PlayerVar then
+		self._Write = function(self, ent, value)
+			net_WriteUInt(ent:EntIndex(), 8)
+			WriteFunc(value)
+		end
+		self._Read = function(self)
+			return net_ReadUInt(8), ReadFunc()
+		end
+	elseif self.LocalPlayerVar then
 		self._Write = function(self, ent, value)
 			WriteFunc(value)
 		end
@@ -192,9 +211,11 @@ function ENTITY:GetNetVar(var)
 end
 
 if (SERVER) then
-	util.AddNetworkString('nw.PlayerSync')
-	util.AddNetworkString('nw.NullVar')
-	util.AddNetworkString('nw.EntityRemoved')
+	util.AddNetworkString 'nw.PlayerSync'
+	util.AddNetworkString 'nw.NilEntityVar'
+	util.AddNetworkString 'nw.NilPlayerVar'
+	util.AddNetworkString 'nw.EntityRemoved'
+	util.AddNetworkString 'nw.PlayerRemoved'
 
 	net.Receive('nw.PlayerSync', function(len, pl)
 		if (pl.EntityCreated ~= true) then
@@ -205,7 +226,7 @@ if (SERVER) then
 			for index, _vars in pairs(data) do
 				for var, value in pairs(_vars) do
 					local ent = Entity(index)
-					if (not vars[var].LocalVar and not vars[var].NoSync) or (ent == pl) then
+					if (not vars[var].LocalPlayerVar and not vars[var].NoSync) or (ent == pl) then
 						vars[var]:_Send(ent, value, pl)
 					end
 				end
@@ -223,9 +244,16 @@ if (SERVER) then
 	hook.Add('EntityRemoved', 'nw.EntityRemoved', function(ent)
 		local index = ent:EntIndex()
 		if (index ~= 0) and (data[index] ~= nil) then -- For some reason this kept getting called on Entity(0), not sure why...
-			net_Start('nw.EntityRemoved')
-				net_WriteUInt(index, 12)
-			net_Broadcast()
+			if ent:IsPlayer() then
+				net_Start('nw.PlayerRemoved')
+					net_WriteUInt(index, 8)
+				net_Broadcast()
+			else
+				net_Start('nw.EntityRemoved')
+					net_WriteUInt(index, 12)
+				net_Broadcast()
+			end
+			
 			data[index] = nil
 		end
 	end)
@@ -246,7 +274,7 @@ if (SERVER) then
 		if (value ~= nil) then
 			vars[var]:_Send(0, value)
 		else
-			net_Start('nw.NullVar')
+			net_Start('nw.NilEntityVar')
 				net_WriteUInt(0, 12)
 				net_WriteUInt(vars[var].ID, bitcount)
 			vars[var]:SendFunc(0, value)
@@ -265,8 +293,13 @@ if (SERVER) then
 		if (value ~= nil) then
 			vars[var]:_Send(self, value)
 		else
-			net_Start('nw.NullVar')
+			if self:IsPlayer() then
+				net_Start('nw.NilPlayerVar')
+				net_WriteUInt(index, 8)
+			else
+				net_Start('nw.NilEntityVar')
 				net_WriteUInt(index, 12)
+			end
 				net_WriteUInt(vars[var].ID, bitcount)
 			vars[var]:SendFunc(self, value)
 		end
@@ -277,14 +310,25 @@ else
 		net_Send()
 	end)
 
-	net.Receive('nw.NullVar', function()
+	net.Receive('nw.NilEntityVar', function()
 		local index, id = net_ReadUInt(12), net_ReadUInt(bitcount)
 		if data[index] and mappings[id] then
 			data[index][mappings[id].Name] = nil
 		end
 	end)
-	
+
+	net.Receive('nw.NilPlayerVar', function()
+		local index, id = net_ReadUInt(8), net_ReadUInt(bitcount)
+		if data[index] and mappings[id] then
+			data[index][mappings[id].Name] = nil
+		end
+	end)
+
 	net.Receive('nw.EntityRemoved', function()
 		data[net_ReadUInt(12)] = nil
+	end)
+
+	net.Receive('nw.PlayerRemoved', function()
+		data[net_ReadUInt(8)] = nil
 	end)
 end
