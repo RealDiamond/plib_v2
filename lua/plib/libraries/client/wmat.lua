@@ -52,7 +52,7 @@ function wmat.Create(name, opts, onsuccess, onfailure)
 			this.Base64 = this.Base64 .. chunk		
 		end,
 		CompleteCache = function(this)
-			file.WriteStaggered('wmatcache/' .. crc .. '.dat', this.Base64, function() end)
+			file.WriteStaggered('wmat/' .. crc .. '.dat', this.Base64, function() end)
 		end
 	})
 end
@@ -188,13 +188,13 @@ hook.Add('InitPostEntity', 'wmat.InitPostEntity', function()
 		if (not wmat.Busy) and (#wmat.Queue > 0) then
 			local info = wmat.Queue[1]
 			
-			if (!file.Exists('wmatcache', 'DATA') or !file.IsDir('wmatcache', 'DATA')) then file.CreateDir('wmatcache') end
+			if (!file.Exists('wmat', 'DATA') or !file.IsDir('wmat', 'DATA')) then file.CreateDir('wmat') end
 			
-			if (file.Exists('wmatcache/' .. info.CRC .. '.dat', 'DATA')) then
+			if (file.Exists('wmat/' .. info.CRC .. '.dat', 'DATA')) then
 				wmat.Busy = true
 				print("Loading " .. info.Name .. " from cache instead.")
 				
-				file.ReadStaggered('wmatcache/' .. info.CRC .. '.dat', function(data)
+				file.ReadStaggered('wmat/' .. info.CRC .. '.dat', function(data)
 					info.LoadedFromCache = true
 					self:RunJavascript('SetImageData("' .. data .. '", "' .. math.Clamp(info.W, 0, 4096)  .. '", "' .. math.Clamp(info.H, 0, 4096) .. '")')
 				end)
