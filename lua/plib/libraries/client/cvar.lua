@@ -19,16 +19,16 @@ local function encode(data)
 end
 
 local function decode(data)
-	return pon1.dencode(util.Decompress(data))
+	return pon1.decode(util.Decompress(data))
 end
 
 local function load()
 	if (not file.IsDir('cvar', 'DATA')) then
 		file.CreateDir('cvar')
 	else
-		local files, _ = file.Find('*.dat', 'cvar', 'DATA')
+		local files, _ = file.Find('cvar/*.dat', 'DATA')
 		for k, v in ipairs(files) do
-			local c = setmetatable({decode(file.Read('cvar/' .. v, 'DATA'))}, cvar_mt)
+			local c = setmetatable(decode(file.Read('cvar/' .. v, 'DATA')), cvar_mt)
 			cvar.GetTable[c.Name] = c
 		end
 	end
@@ -42,7 +42,7 @@ function cvar_mt:SetValue(value)
 end
 
 function cvar_mt:SetDefault(value)
-	if (not self.Value) then
+	if (self.Value == nil) then
 		self.Value = value
 	end
 	return self
