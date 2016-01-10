@@ -195,16 +195,17 @@ function dprint(...)
 	MsgC(fileColors[fname], fname .. ':' .. info.linedefined, col_white, concat({...}) .. '\n')
 end
 
+
+--[[---------------------------------------------------------
+   Name: Tracer( vecStart, vecEnd, pEntity, iAttachment, flVelocity, bWhiz, pCustomTracerName, iParticleID )
+   Desc: Create a tracer effect
+-----------------------------------------------------------]]
 -- Tracer flags
 TRACER_FLAG_WHIZ = 0x0001
 TRACER_FLAG_USEATTACHMENT = 0x0002
 
 TRACER_DONT_USE_ATTACHMENT = -1
 
---[[---------------------------------------------------------
-   Name: Tracer( vecStart, vecEnd, pEntity, iAttachment, flVelocity, bWhiz, pCustomTracerName, iParticleID )
-   Desc: Create a tracer effect
------------------------------------------------------------]]
 function util.Tracer( vecStart, vecEnd, pEntity, iAttachment, flVelocity, bWhiz, pCustomTracerName, iParticleID )
 	local data = EffectData()
 	data:SetStart( vecStart )
@@ -242,7 +243,61 @@ end
 	Linear interpolates between two colors
 -----------------------------------------------------------]]
 function LerpColor( fraction, from, to )
-
 	return Color( Lerp( fraction, from.r, to.r ), Lerp( fraction, from.g, to.g ), Lerp( fraction, from.b, to.b ), Lerp( fraction, from.a, to.a ) )
+end
 
+
+--[[---------------------------------------------------------
+	Find an empty Vector
+-----------------------------------------------------------]]
+local Vector 				= Vector
+local ents_FindInSphere 	= ents.FindInSphere
+local util_PointContents 	= util.PointContents
+
+local badpoints = {
+	[CONTENTS_SOLID] 		= true,
+	[CONTENTS_MOVEABLE] 	= true,
+	[CONTENTS_LADDER]		= true,
+	[CONTENTS_PLAYERCLIP] 	= true,
+	[CONTENTS_MONSTERCLIP] 	= true,
+}
+
+local badents = {
+	['prop_physics'] 	= true,
+	['player'] 			= true
+}
+
+local function isempty(pos, area)
+	if badpoints[util_PointContents(pos)] then
+		return false
+	end
+	local entities = ents_FindInSphere(pos, area)
+	for i = 1, #entities do
+		if badents[entities[i]:GetClass()] then
+			return false
+		end
+	end
+	return true
+end
+
+function util.FindEmptyPos(pos, area, steps)
+	area = area or 35
+
+	if isempty(pos, area) then
+		return pos
+	end
+
+	for i = 1, (steps or 6) do
+		local step = (i * 50)
+		if isempty(Vector(pos.x + step, pos.y, pos.z), area) then
+			pos.x = pos.x + step
+			return pos
+		elseif isempty(Vector(pos.x, pos.y + step, pos.z), area) then
+			pos.y = pos.y + step
+			return pos
+		elseif isempty(Vector(pos.x, pos.y, pos.z + step), area) then
+			pos.z = pos.z + step
+			return pos
+		end
+	end
 end
