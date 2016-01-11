@@ -15,19 +15,16 @@ hook.GetTable = function()
 end
 
 hook.Call = function(name, gm, ...) 
-	local a, b, c, d, e
 	if hooks[name] ~= nil then
-		for k,v in ipairs(hooks[name]) do
-			a, b, c, d, e = v(...)
+		for k, v in ipairs(hooks[name]) do
+			local a, b, c, d, e = v(...)
 			if a ~= nil then
 				return a, b, c, d, e
 			end
 		end
 	end
-	if gm ~= nil then
-		if gm[name] then
-			return gm[name](gm, ...)
-		end
+	if gm ~= nil and gm[name] then
+		return gm[name](gm, ...)
 	end
 end
 
@@ -62,9 +59,11 @@ hook.Add = function(name, id, func)
 
 	if type(id) ~= 'string' then
 		local orig = func
+		local obj = id
+		id = tostring(obj)
 		func = function(...)
-			if IsValid(id) then
-				return orig(id, ...)
+			if IsValid(obj) then
+				return orig(obj, ...)
 			else
 				hook_Remove(name, id)
 			end
