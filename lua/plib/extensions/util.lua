@@ -246,7 +246,6 @@ function LerpColor( fraction, from, to )
 	return Color( Lerp( fraction, from.r, to.r ), Lerp( fraction, from.g, to.g ), Lerp( fraction, from.b, to.b ), Lerp( fraction, from.a, to.a ) )
 end
 
-
 --[[---------------------------------------------------------
 	Find an empty Vector
 -----------------------------------------------------------]]
@@ -262,18 +261,13 @@ local badpoints = {
 	[CONTENTS_MONSTERCLIP] 	= true,
 }
 
-local badents = {
-	['prop_physics'] 	= true,
-	['player'] 			= true
-}
-
 local function isempty(pos, area)
 	if badpoints[util_PointContents(pos)] then
 		return false
 	end
 	local entities = ents_FindInSphere(pos, area)
 	for i = 1, #entities do
-		if badents[entities[i]:GetClass()] then
+		if (entities[i]:GetClass() == 'prop_physics') or (entities[i]:IsPlayer() and entities[i]:Alive()) then
 			return false
 		end
 	end
@@ -281,6 +275,7 @@ local function isempty(pos, area)
 end
 
 function util.FindEmptyPos(pos, area, steps)
+	pos = Vector(pos.x, pos.y, pos.z)
 	area = area or 35
 
 	if isempty(pos, area) then
@@ -300,4 +295,6 @@ function util.FindEmptyPos(pos, area, steps)
 			return pos
 		end
 	end
+	
+	return pos
 end
