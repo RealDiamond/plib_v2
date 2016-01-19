@@ -1,4 +1,8 @@
-hook 				= {}
+hook = setmetatable({}, {
+	__call = function(self, ...)
+		return self.Add(...)
+	end
+})
 
 local hook 			= hook
 local table_remove 	= table.remove
