@@ -1,6 +1,8 @@
-getmetatable(net).__call = function(self, name, func)
-	return self.Receive(name, func)
-end
+setmetatable(net, {
+	__call = function(self, name, func)
+		return self.Receive(name, func)
+	end
+})
 
 local IsValid 	= IsValid
 local Entity 	= Entity
