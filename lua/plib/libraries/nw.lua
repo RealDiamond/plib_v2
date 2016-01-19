@@ -88,6 +88,8 @@ function nw.Register(var, info) -- You must always call this on both the client 
 			end
 
 			data[index][var] = value
+
+			t:_CallHook(index, value)
 		end)
 	end
 
@@ -144,10 +146,25 @@ function nw_mt:SetNoSync()
 	return self:_Construct()
 end
 
+function nw_mt:SetHook(name)
+	self.Hook = name
+	return self
+end
+
 function nw_mt:_Send(ent, value, recipients)
 	net_Start(self.NetworkString)
 		self:_Write(ent, value)
 	self:SendFunc(ent, value, recipients)
+end
+
+function nw_mt:_CallHook(index, value)
+	if (self.Hook) then
+		if (index != 0) then
+			hook.Call(self.Hook, GAMEMODE, Entity(index), value)
+		else
+			hook.Call(self.Hook, GAMEMODE, value)
+		end
+	end
 end
 
 function nw_mt:_Construct()
