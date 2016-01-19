@@ -42,6 +42,7 @@ function cvar_mt:SetValue(value)
 end
 
 function cvar_mt:SetDefault(value)
+	self.DefaultValue = value
 	if (self.Value == nil) then
 		self.Value = value
 	end
@@ -68,6 +69,15 @@ end
 
 function cvar_mt:GetMetadata(key)
 	return self.Metadata[key]
+end
+
+function cvar_mt:Reset()
+	local default = self.DefaultValue
+	if (default ~= nil) then
+		self:SetValue(default)
+		return true
+	end
+	return false
 end
 
 function cvar.Register(name)
