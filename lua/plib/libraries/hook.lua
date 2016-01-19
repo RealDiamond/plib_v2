@@ -1,6 +1,6 @@
 hook = setmetatable({}, {
-	__call = function(self, ...)
-		return self.Add(...)
+	__call = function(self, name, id, func)
+		return self.Add(name, id, func)
 	end
 })
 
