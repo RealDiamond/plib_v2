@@ -14,6 +14,8 @@ cvar.GetTable = setmetatable({}, {
 local cvar_mt 	= {}
 cvar_mt.__index = cvar_mt
 
+debug.getregistry().cvar = cvar_mt
+
 local function encode(data)
 	return util.Compress(pon1.encode(data))
 end

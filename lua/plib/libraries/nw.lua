@@ -35,6 +35,8 @@ local callbacks = {}
 local nw_mt 	= {}
 nw_mt.__index 	= nw_mt
 
+debug.getregistry().nw = nw_mt
+
 local bitmap 	= {
 	[3]		= 3,
 	[7] 	= 4,
