@@ -298,3 +298,16 @@ function util.FindEmptyPos(pos, area, steps)
 	
 	return pos
 end
+
+function resource.AddDir(dir, recursive)
+	local files, folders = file.Find(dir .. '*', 'GAME')
+
+	for k, v in ipairs(files) do
+		resource.AddFile(dir .. v)
+	end
+	if (recursive == true) then
+		for k, v in ipairs(folders) do
+			resource.AddDir(dir .. v, recursive)
+		end
+	end
+end

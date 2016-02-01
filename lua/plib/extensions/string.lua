@@ -60,6 +60,17 @@ function string.URLDecode(str)
 	end )
 end
 
+function string.StripPort(ip)
+	local p = string.find(ip, ':')
+	if (not p) then return ip end
+	return string.sub(ip, 1, p - 1)
+end
+
+function string.FromNumbericIP(ip)
+	ip = tonumber(ip)
+	return bit.rshift(bit.band(ip, 0xFF000000), 24) .. '.' .. bit.rshift(bit.band(ip, 0x00FF0000), 16) .. '.' .. bit.rshift(bit.band(ip, 0x0000FF00), 8) .. '.' .. bit.band(ip, 0x000000FF)
+end
+
 if (SERVER) then return end
 
 local surface_SetFont 		= surface.SetFont

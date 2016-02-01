@@ -24,6 +24,7 @@ local function decode(data)
 	return pon1.decode(util.Decompress(data))
 end
 
+local cvar_staging = {}
 local function load()
 	if (not file.IsDir('cvar', 'DATA')) then
 		file.CreateDir('cvar')
@@ -31,7 +32,7 @@ local function load()
 		local files, _ = file.Find('cvar/*.dat', 'DATA')
 		for k, v in ipairs(files) do
 			local c = setmetatable(decode(file.Read('cvar/' .. v, 'DATA')), cvar_mt)
-			cvar.GetTable[c.Name] = c
+			cvar_staging[c.Name] = c
 		end
 	end
 end
@@ -83,12 +84,14 @@ function cvar_mt:Reset()
 end
 
 function cvar.Register(name)
-	if (not cvar.GetTable[name]) then
+	if (not cvar_staging[name]) then
 		cvar.GetTable[name] = setmetatable({
 			Name = name,
 			ID 	= util.CRC(name),
 			Metadata = {}
 		}, cvar_mt)
+	else
+		cvar.GetTable[name] = cvar_staging[name]
 	end
 	return cvar.GetTable[name]
 end
