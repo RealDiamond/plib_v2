@@ -37,7 +37,7 @@ end
 -- call all the functions with the same arguments
 function xfn.parallel(...)
 	-- its almost beautiful.
-	xfn.compose(xfn.mapStack(xfn.returnArgs, ...))
+	return xfn.compose(xfn.mapStack(xfn.returnArgs, ...))
 end
 
 function xfn.filter(tab, func)
